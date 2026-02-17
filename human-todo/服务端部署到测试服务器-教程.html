@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务端部署到测试服务器 - 教程（需人待办）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', sans-serif; }
+        body { background-color: #f5f7fa; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3498db; padding-bottom: 15px; }
+        .section { margin-bottom: 40px; }
+        .section h2 { color: #3498db; margin-bottom: 15px; font-size: 1.2rem; }
+        .section h3 { color: #2980b9; margin-bottom: 12px; padding-left: 10px; border-left: 4px solid #2980b9; font-size: 1.05rem; }
+        .section p, .section li { color: #2c3e50; margin-bottom: 10px; }
+        .section ul { margin-left: 20px; margin-bottom: 15px; }
+        .section ul li { margin-bottom: 6px; }
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; color: white; background-color: #3498db; margin-right: 6px; }
+        .tag-tip { background-color: #2ecc71; }
+        .tag-warn { background-color: #f39c12; }
+        .conclusion { background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 12px 15px; margin: 15px 0; color: #2c3e50; }
+        .note { color: #7f8c8d; font-size: 0.95rem; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+        .footer-note { color: #95a5a6; font-size: 0.9rem; text-align: center; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ 服务端部署到测试服务器 - 教程（需人待办）</h1>
+        <p class="note" style="text-align: center; margin-bottom: 25px;">摩迪项目 · 短信用阿里云，服务器建议同选阿里云，便于内网与管控</p>
+
+        <div class="section">
+            <h2>一、服务器选型：用阿里云可以吗？</h2>
+            <p><span class="tag tag-tip">建议</span> 可以。短信已经用阿里云，服务器也用阿里云的好处：</p>
+            <ul>
+                <li>同一账号下，控制台、账单、工单一处搞定</li>
+                <li>若以后短信和服务器要内网互通（如同地域），可直接用内网地址，省流量、更安全</li>
+                <li>ECS 和 RDS（云数据库）同地域延迟低，若以后 MySQL 迁到 RDS 也方便</li>
+            </ul>
+            <p class="note">其他云（腾讯云、华为云等）也完全可以，按你习惯选即可；本教程以阿里云 ECS 为例。</p>
+        </div>
+
+        <div class="section">
+            <h2>二、服务器「种类」怎么选？</h2>
+            <p>阿里云上跑 Node 服务，常见几种：</p>
+            <ul>
+                <li><strong>ECS 云服务器</strong>：最通用，自己装系统、装 Node、装 MySQL，灵活。适合长期、要自己控环境。</li>
+                <li><strong>轻量应用服务器</strong>：比 ECS 简单、便宜，带宽和流量包更直观，适合小站、测试环境。也能装 Node + MySQL。</li>
+                <li><strong>函数计算 FC / 容器服务</strong>：不用自己管服务器，按请求计费或按容器跑。适合无状态 API，但本项目用 MySQL、有状态，建议先不选。</li>
+            </ul>
+            <div class="conclusion"><span class="tag">推荐</span> 测试阶段：<strong>轻量应用服务器</strong>（便宜、够用）或 <strong>ECS 最低配</strong>（如 1 核 2G）。正式运营再按流量和稳定性升级。</div>
+        </div>
+
+        <div class="section">
+            <h2>三、服务器要装什么？</h2>
+            <p>摩迪服务端是 <strong>Node.js + MySQL</strong>，所以服务器上需要：</p>
+            <ul>
+                <li><strong>Node.js</strong>：跑 <code>npm run build</code> 后的 <code>node dist/index.js</code>（或用 pm2）。建议 Node 18+ LTS。</li>
+                <li><strong>MySQL</strong>：本机装 MySQL 8，或以后改用阿里云 RDS。先在服务器装 MySQL 即可：创建库 <code>mody_db</code>，把 <code>.env</code> 里 DB 配置指向服务器本机或 RDS。</li>
+                <li><strong>（可选）Nginx</strong>：做反向代理、绑域名、配 HTTPS；若暂时只跑测试 IP:端口，可先不装。</li>
+            </ul>
+            <p class="note">是的，<strong>服务器上要装 MySQL</strong>（或使用云数据库 RDS）。当前项目是「自建 MySQL」，所以要么在 ECS/轻量里装 MySQL，要么买 RDS 实例并把 <code>DB_HOST</code> 改成 RDS 地址。</p>
+        </div>
+
+        <div class="section">
+            <h2>四、部署步骤概要（需你本机/服务器操作）</h2>
+            <h3>1. 买服务器</h3>
+            <ul>
+                <li>登录阿里云 → 轻量应用服务器 或 ECS → 选地域（如华东）、镜像选 Linux（Ubuntu 22.04 或 CentOS 7/8 均可）→ 购买。</li>
+                <li>记下公网 IP，用 SSH 或控制台终端登录。</li>
+            </ul>
+            <h3>2. 装 Node.js</h3>
+            <ul>
+                <li>Ubuntu 示例：<code>curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -</code>，再 <code>sudo apt install -y nodejs</code>。</li>
+                <li>或从 Node 官网下二进制包放到 <code>/usr/local</code> 并配 PATH。</li>
+            </ul>
+            <h3>3. 装 MySQL</h3>
+            <ul>
+                <li>Ubuntu：<code>sudo apt update && sudo apt install -y mysql-server</code>，<code>sudo mysql_secure_installation</code> 设 root 密码。</li>
+                <li>登录 MySQL：<code>CREATE DATABASE mody_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</code>，并创建一用户给应用用（或直接用 root 先测）。</li>
+            </ul>
+            <h3>4. 上传代码并运行</h3>
+            <ul>
+                <li>本机打包 <code>server</code>（可排除 <code>node_modules</code>），用 scp / 宝塔 / Git 传到服务器。</li>
+                <li>服务器上：<code>cd server && npm install --production && npm run build</code>。</li>
+                <li>在服务器上建 <code>.env</code>，填 <code>DB_HOST=127.0.0.1</code>、<code>DB_PASSWORD=...</code>、<code>JWT_SECRET=...</code> 等。</li>
+                <li>运行：<code>node dist/index.js</code> 或 <code>npx pm2 start dist/index.js --name mody-api</code>。</li>
+            </ul>
+            <h3>5. 安全组 / 防火墙</h3>
+            <ul>
+                <li>阿里云控制台里给实例放行端口：如 <code>3000</code>（API）、<code>22</code>（SSH）。MySQL 若只本机访问可不放行 3306。</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>五、小结</h2>
+            <ul>
+                <li><strong>服务器</strong>：建议阿里云 ECS 或轻量，和短信同一家；测试阶段 1 核 2G 即可。</li>
+                <li><strong>要装的</strong>：Node.js、MySQL（或改用 RDS）；Nginx 可选。</li>
+                <li><strong>部署</strong>：代码上传 → <code>npm install --production && npm run build</code> → 配 <code>.env</code> → <code>node dist/index.js</code> 或 pm2。</li>
+            </ul>
+            <p class="footer-note">💡 具体命令以你选的系统为准，遇报错可查阿里云文档或把报错贴给 AI 排查</p>
+        </div>
+    </div>
+</body>
+</html>

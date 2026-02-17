@@ -1,0 +1,30 @@
+{
+  "name": "mody-driver-app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "dev": "node scripts/set-api.js dev && react-native start",
+    "pre": "node scripts/set-api.js pre && react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "0.74.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.46",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.3.3",
+    "@babel/core": "^7.23.7",
+    "babel-jest": "^29.7.0",
+    "metro-react-native-babel-preset": "^0.77.0",
+    "react-test-renderer": "18.2.0"
+  }
+}
+
+

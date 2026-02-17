@@ -1,0 +1,10 @@
+{
+  "workbench.externalUriOpeners": {
+    "http": "default",
+    "https": "default"
+  },
+  "terminalOpenWith.mappings": [
+    { "glob": "http://localhost*", "app": "chrome" },
+    { "glob": "https://localhost*", "app": "chrome" }
+  ]
+}

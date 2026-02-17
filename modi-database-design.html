@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摩的 App 数据库设计文档</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --surface2: #24242c;
+            --text: #e8e8ed;
+            --text-muted: #9898a6;
+            --accent: #6366f1;
+            --accent-soft: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --blue: #3b82f6;
+            --rose: #f43f5e;
+            --purple: #a855f7;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            min-height: 100vh;
+            position: relative;
+        }
+        .copy-btn {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+        .copy-btn:hover {
+            background: #5855eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+        .copy-btn.copied {
+            background: var(--green);
+        }
+        .page {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 48px 24px 64px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .doc-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+        .overview {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 40px;
+            border: 1px solid var(--surface2);
+        }
+        .overview h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .overview p {
+            font-size: 1.05rem;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        .overview ul {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 16px;
+        }
+        .overview li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .overview li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--surface2);
+        }
+        .table-card {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--surface2);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--surface2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .table-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .table-icon.users { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+        .table-icon.drivers { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+        .table-icon.locations { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
+        .table-icon.verification { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+        .table-icon.admin { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+        .table-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .table-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        thead {
+            background: var(--surface2);
+        }
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid var(--surface2);
+            color: var(--text);
+        }
+        tbody tr:hover {
+            background: var(--surface2);
+        }
+        .field-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            font-weight: 500;
+        }
+        .field-type {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--green);
+            font-size: 0.85rem;
+        }
+        .field-constraint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge.pk { background: rgba(99, 102, 241, 0.2); color: var(--accent); }
+        .badge.unique { background: rgba(34, 197, 94, 0.2); color: var(--green); }
+        .badge.index { background: rgba(245, 158, 11, 0.2); color: var(--amber); }
+        .badge.fk { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
+        .badge.not-null { background: rgba(244, 63, 94, 0.2); color: var(--rose); }
+        .code-block {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+        .code-block pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+        .code-block code {
+            color: var(--text);
+        }
+        footer {
+            margin-top: 48px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <button class="copy-btn" onclick="copyPageContent()">
+        <span>📋</span>
+        <span>复制页面内容</span>
+    </button>
+
+    <div class="page">
+        <header>
+            <div class="doc-badge">数据库设计</div>
+            <h1>摩的 App 数据库表结构设计</h1>
+            <p class="subtitle">MySQL + Sequelize ORM · 基于需求文档设计</p>
+        </header>
+
+        <section class="overview">
+            <h2>设计说明</h2>
+            <p>
+                本数据库设计支持摩的 App 四端核心功能：<strong>用户注册登录</strong>、<strong>司机注册审核</strong>、<strong>实时定位上报</strong>、<strong>附近司机查询</strong>、<strong>短信验证码</strong>等。采用 MySQL 数据库，通过 Sequelize ORM 进行数据操作。
+            </p>
+            <ul>
+                <li><strong>admins</strong> - 管理员表，存储管理端账号、角色权限，用于司机审核与运营后台</li>
+                <li><strong>users</strong> - 用户（乘客）表，存储用户基本信息</li>
+                <li><strong>drivers</strong> - 司机表，存储司机信息、审核状态、接客状态</li>
+                <li><strong>driver_locations</strong> - 司机定位记录表，存储司机实时位置（每30秒上报）</li>
+                <li><strong>verification_codes</strong> - 短信验证码表，存储验证码用于注册/登录校验</li>
+            </ul>
+        </section>
+
+        <h2 class="section-title">数据表结构</h2>
+
+        <!-- admins 表 -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-icon admin">🛡️</div>
+                <div>
+                    <div class="table-title">admins - 管理员表</div>
+                    <div class="table-desc">存储管理端账号、角色权限，用于司机审核、用户管理、数据看板等后台功能</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>约束</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="field-name">id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge pk">PRIMARY KEY</span> <span class="badge not-null">NOT NULL</span> <span class="badge">AUTO_INCREMENT</span></td>
+                            <td>管理员ID，主键</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">username</span></td>
+                            <td><span class="field-type">VARCHAR(50)</span></td>
+                            <td><span class="badge unique">UNIQUE</span> <span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>用户名，唯一索引，用于登录</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">password_hash</span></td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>密码哈希值（bcrypt加密）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">name</span></td>
+                            <td><span class="field-type">VARCHAR(50)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>管理员姓名/昵称，可选</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">email</span></td>
+                            <td><span class="field-type">VARCHAR(100)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>邮箱，可选</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">role</span></td>
+                            <td><span class="field-type">ENUM('super_admin', 'admin', 'operator')</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge">DEFAULT 'operator'</span> <span class="badge index">INDEX</span></td>
+                            <td>角色：super_admin-超管，admin-管理员，operator-运营</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">status</span></td>
+                            <td><span class="field-type">ENUM('active', 'inactive')</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge">DEFAULT 'active'</span> <span class="badge index">INDEX</span></td>
+                            <td>状态：active-正常，inactive-禁用</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">created_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>创建时间</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">updated_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>更新时间</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="code-block">
+                <pre><code>-- Sequelize 模型定义示例
+const Admin = sequelize.define('Admin', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  username: { type: DataTypes.STRING(50), unique: true, allowNull: false },
+  password_hash: { type: DataTypes.STRING(255), allowNull: false },
+  name: { type: DataTypes.STRING(50), allowNull: true },
+  email: { type: DataTypes.STRING(100), allowNull: true },
+  role: { 
+    type: DataTypes.ENUM('super_admin', 'admin', 'operator'),
+    defaultValue: 'operator',
+    allowNull: false
+  },
+  status: { 
+    type: DataTypes.ENUM('active', 'inactive'),
+    defaultValue: 'active',
+    allowNull: false
+  },
+}, {
+  tableName: 'admins',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});</code></pre>
+            </div>
+        </div>
+
+        <!-- users 表 -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-icon users">👤</div>
+                <div>
+                    <div class="table-title">users - 用户表</div>
+                    <div class="table-desc">存储乘客（用户）的基本信息，支持注册、登录、个人中心等功能</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>约束</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="field-name">id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge pk">PRIMARY KEY</span> <span class="badge not-null">NOT NULL</span> <span class="badge">AUTO_INCREMENT</span></td>
+                            <td>用户ID，主键</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">phone</span></td>
+                            <td><span class="field-type">VARCHAR(11)</span></td>
+                            <td><span class="badge unique">UNIQUE</span> <span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>手机号（11位），唯一索引，用于登录</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">password_hash</span></td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>密码哈希值（bcrypt加密）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">name</span></td>
+                            <td><span class="field-type">VARCHAR(50)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>用户昵称，可选</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">avatar</span></td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>头像URL，可选</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">status</span></td>
+                            <td><span class="field-type">TINYINT</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge">DEFAULT 1</span></td>
+                            <td>状态：1-正常，0-禁用</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">created_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>创建时间</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">updated_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>更新时间</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="code-block">
+                <pre><code>-- Sequelize 模型定义示例
+const User = sequelize.define('User', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  phone: { type: DataTypes.STRING(11), unique: true, allowNull: false },
+  password_hash: { type: DataTypes.STRING(255), allowNull: false },
+  name: { type: DataTypes.STRING(50), allowNull: true },
+  avatar: { type: DataTypes.STRING(255), allowNull: true },
+  status: { type: DataTypes.TINYINT, defaultValue: 1, allowNull: false },
+}, {
+  tableName: 'users',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});</code></pre>
+            </div>
+        </div>
+
+        <!-- drivers 表 -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-icon drivers">🛵</div>
+                <div>
+                    <div class="table-title">drivers - 司机表</div>
+                    <div class="table-desc">存储司机信息、审核状态、接客状态，支持司机注册、审核、状态切换等功能</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>约束</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="field-name">id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge pk">PRIMARY KEY</span> <span class="badge not-null">NOT NULL</span> <span class="badge">AUTO_INCREMENT</span></td>
+                            <td>司机ID，主键</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">phone</span></td>
+                            <td><span class="field-type">VARCHAR(11)</span></td>
+                            <td><span class="badge unique">UNIQUE</span> <span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>手机号（11位），唯一索引，用于登录</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">password_hash</span></td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>密码哈希值（bcrypt加密）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">name</span></td>
+                            <td><span class="field-type">VARCHAR(50)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>司机姓名</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">avatar</span></td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>头像URL，可选</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">id_card</span></td>
+                            <td><span class="field-type">VARCHAR(18)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>身份证号（用于审核）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">license_plate</span></td>
+                            <td><span class="field-type">VARCHAR(20)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>车牌号</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">vehicle_type</span></td>
+                            <td><span class="field-type">VARCHAR(20)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>车辆类型（如：摩托车、电动车）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">status</span></td>
+                            <td><span class="field-type">ENUM('pending', 'approved', 'rejected')</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge">DEFAULT 'pending'</span> <span class="badge index">INDEX</span></td>
+                            <td>审核状态：pending-待审核，approved-已通过，rejected-已驳回</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">is_available</span></td>
+                            <td><span class="field-type">BOOLEAN</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge">DEFAULT false</span> <span class="badge index">INDEX</span></td>
+                            <td>接客状态：true-空闲可接客，false-接客中/不可用</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">last_location_id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge">NULL</span> <span class="badge fk">FK</span></td>
+                            <td>最新定位记录ID（关联 driver_locations），用于快速查询</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">created_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>创建时间</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">updated_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>更新时间</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="code-block">
+                <pre><code>-- Sequelize 模型定义示例
+const Driver = sequelize.define('Driver', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  phone: { type: DataTypes.STRING(11), unique: true, allowNull: false },
+  password_hash: { type: DataTypes.STRING(255), allowNull: false },
+  name: { type: DataTypes.STRING(50), allowNull: false },
+  avatar: { type: DataTypes.STRING(255), allowNull: true },
+  id_card: { type: DataTypes.STRING(18), allowNull: true },
+  license_plate: { type: DataTypes.STRING(20), allowNull: true },
+  vehicle_type: { type: DataTypes.STRING(20), allowNull: true },
+  status: { 
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'), 
+    defaultValue: 'pending', 
+    allowNull: false 
+  },
+  is_available: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: false },
+  last_location_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+}, {
+  tableName: 'drivers',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});</code></pre>
+            </div>
+        </div>
+
+        <!-- driver_locations 表 -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-icon locations">📍</div>
+                <div>
+                    <div class="table-title">driver_locations - 司机定位记录表</div>
+                    <div class="table-desc">存储司机实时定位数据，每30秒上报一次，用于计算附近司机（Haversine算法）</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>约束</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="field-name">id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge pk">PRIMARY KEY</span> <span class="badge not-null">NOT NULL</span> <span class="badge">AUTO_INCREMENT</span></td>
+                            <td>定位记录ID，主键</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">driver_id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge fk">FK</span> <span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>司机ID（外键关联 drivers.id）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">latitude</span></td>
+                            <td><span class="field-type">DECIMAL(10, 8)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>纬度（-90 到 90）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">longitude</span></td>
+                            <td><span class="field-type">DECIMAL(11, 8)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>经度（-180 到 180）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">accuracy</span></td>
+                            <td><span class="field-type">DECIMAL(8, 2)</span></td>
+                            <td><span class="badge">NULL</span></td>
+                            <td>定位精度（米），可选</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">created_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>定位上报时间（用于查询最新定位）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="code-block">
+                <pre><code>-- Sequelize 模型定义示例
+const DriverLocation = sequelize.define('DriverLocation', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  driver_id: { 
+    type: DataTypes.INTEGER.UNSIGNED, 
+    allowNull: false,
+    references: { model: 'drivers', key: 'id' },
+    onDelete: 'CASCADE'
+  },
+  latitude: { type: DataTypes.DECIMAL(10, 8), allowNull: false },
+  longitude: { type: DataTypes.DECIMAL(11, 8), allowNull: false },
+  accuracy: { type: DataTypes.DECIMAL(8, 2), allowNull: true },
+}, {
+  tableName: 'driver_locations',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: false
+});
+
+// 关联关系
+DriverLocation.belongsTo(Driver, { foreignKey: 'driver_id' });
+Driver.hasMany(DriverLocation, { foreignKey: 'driver_id' });</code></pre>
+            </div>
+        </div>
+
+        <!-- verification_codes 表 -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-icon verification">📨</div>
+                <div>
+                    <div class="table-title">verification_codes - 短信验证码表</div>
+                    <div class="table-desc">存储短信验证码，用于用户/司机注册、登录时的验证码校验（阿里云短信服务）</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>约束</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="field-name">id</span></td>
+                            <td><span class="field-type">INT UNSIGNED</span></td>
+                            <td><span class="badge pk">PRIMARY KEY</span> <span class="badge not-null">NOT NULL</span> <span class="badge">AUTO_INCREMENT</span></td>
+                            <td>验证码记录ID，主键</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">phone</span></td>
+                            <td><span class="field-type">VARCHAR(11)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>手机号（11位）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">code</span></td>
+                            <td><span class="field-type">VARCHAR(6)</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>验证码（6位数字）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">type</span></td>
+                            <td><span class="field-type">ENUM('register', 'login')</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>验证码类型：register-注册，login-登录</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">expires_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge index">INDEX</span></td>
+                            <td>过期时间（通常5-10分钟）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">used</span></td>
+                            <td><span class="field-type">BOOLEAN</span></td>
+                            <td><span class="badge not-null">NOT NULL</span> <span class="badge">DEFAULT false</span> <span class="badge index">INDEX</span></td>
+                            <td>是否已使用：true-已使用，false-未使用</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">created_at</span></td>
+                            <td><span class="field-type">DATETIME</span></td>
+                            <td><span class="badge not-null">NOT NULL</span></td>
+                            <td>创建时间</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="code-block">
+                <pre><code>-- Sequelize 模型定义示例
+const VerificationCode = sequelize.define('VerificationCode', {
+  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+  phone: { type: DataTypes.STRING(11), allowNull: false },
+  code: { type: DataTypes.STRING(6), allowNull: false },
+  type: { 
+    type: DataTypes.ENUM('register', 'login'), 
+    allowNull: false 
+  },
+  expires_at: { type: DataTypes.DATE, allowNull: false },
+  used: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: false },
+}, {
+  tableName: 'verification_codes',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: false
+});</code></pre>
+            </div>
+        </div>
+
+        <h2 class="section-title">关键索引与查询优化</h2>
+        <div class="table-card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>表名</th>
+                            <th>索引字段</th>
+                            <th>索引类型</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="field-name">users</span></td>
+                            <td><span class="field-name">phone</span></td>
+                            <td><span class="badge unique">UNIQUE INDEX</span></td>
+                            <td>快速登录查询</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">drivers</span></td>
+                            <td><span class="field-name">phone</span></td>
+                            <td><span class="badge unique">UNIQUE INDEX</span></td>
+                            <td>快速登录查询</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">drivers</span></td>
+                            <td><span class="field-name">status</span></td>
+                            <td><span class="badge index">INDEX</span></td>
+                            <td>管理端查询待审核司机（WHERE status='pending'）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">drivers</span></td>
+                            <td><span class="field-name">is_available</span></td>
+                            <td><span class="badge index">INDEX</span></td>
+                            <td>查询可用司机（WHERE is_available=true）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">driver_locations</span></td>
+                            <td><span class="field-name">driver_id</span></td>
+                            <td><span class="badge index">INDEX</span></td>
+                            <td>查询某司机的定位历史</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">driver_locations</span></td>
+                            <td><span class="field-name">created_at</span></td>
+                            <td><span class="badge index">INDEX</span></td>
+                            <td>查询最新定位（ORDER BY created_at DESC）</td>
+                        </tr>
+                        <tr>
+                            <td><span class="field-name">verification_codes</span></td>
+                            <td><span class="field-name">phone, expires_at, used</span></td>
+                            <td><span class="badge index">复合索引</span></td>
+                            <td>验证码校验查询（WHERE phone=? AND expires_at>NOW() AND used=false）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            基于《摩的 App 需求文档》设计 · MySQL + Sequelize ORM · 支持四端核心功能
+        </footer>
+    </div>
+
+    <script>
+        function copyPageContent() {
+            const btn = document.querySelector('.copy-btn');
+            const content = document.body.innerText || document.body.textContent;
+            
+            // 创建临时文本区域
+            const textarea = document.createElement('textarea');
+            textarea.value = content;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                btn.classList.add('copied');
+                btn.innerHTML = '<span>✓</span><span>已复制</span>';
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '<span>📋</span><span>复制页面内容</span>';
+                }, 2000);
+            } catch (err) {
+                alert('复制失败，请手动选择文本复制');
+            }
+            
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>

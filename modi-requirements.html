@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摩的 App 需求文档</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --surface2: #24242c;
+            --text: #e8e8ed;
+            --text-muted: #9898a6;
+            --accent: #6366f1;
+            --accent-soft: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --blue: #3b82f6;
+            --rose: #f43f5e;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            min-height: 100vh;
+        }
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 48px 24px 64px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .doc-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+        .overview {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 40px;
+            border: 1px solid var(--surface2);
+        }
+        .overview h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .overview p {
+            font-size: 1.05rem;
+            color: var(--text);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--surface2);
+        }
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--surface2);
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent-soft);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--surface2);
+        }
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .card-icon.server { background: var(--accent-soft); color: var(--accent); }
+        .card-icon.driver { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+        .card-icon.user { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+        .card-icon.admin { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .card-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .card-body {
+            padding: 20px 24px 24px;
+        }
+        .card-body ul {
+            list-style: none;
+        }
+        .card-body li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+        .card-body li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5em;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+        .card-body li:last-child {
+            margin-bottom: 0;
+        }
+        footer {
+            margin-top: 48px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <div class="doc-badge">需求文档</div>
+            <h1>摩的 App 需求文档</h1>
+            <p class="subtitle">四端核心功能清单 · 基于 90 天开发进度梳理</p>
+        </header>
+
+        <section class="overview">
+            <h2>产品目的与目标</h2>
+            <p>
+                <strong>摩迪（摩的）App</strong> 旨在连接乘客与摩托车司机，提供「附近司机可见、一键联系」的短途摩的出行服务。目标用户包括：需要摩的出行的乘客、提供服务的司机、以及进行审核与数据运营的管理员。产品通过<strong>服务端</strong>统一接口与数据、<strong>司机端</strong>实时定位与接客状态、<strong>用户端</strong>地图选司机与联系、<strong>管理端</strong>司机审核与数据看板，在 90 天内完成四端从 0 到 1 的交付与 iOS 上架。
+            </p>
+        </section>
+
+        <h2 class="section-title">四端核心功能清单</h2>
+        <div class="cards">
+            <article class="card">
+                <div class="card-header">
+                    <div class="card-icon server">⚙</div>
+                    <div>
+                        <div class="card-title">服务端</div>
+                        <div class="card-role">数据与接口中枢</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>Express + TypeScript 环境，MySQL（Sequelize），CORS、JWT 鉴权</li>
+                        <li>用户注册 / 登录（含短信验证码校验），司机注册 / 登录</li>
+                        <li>司机定位上报与存储，Haversine 计算附近司机（10 公里内）</li>
+                        <li>司机接客状态更新接口</li>
+                        <li>管理端：待审核司机列表、审核通过/驳回、用户列表、数据统计面板接口</li>
+                        <li>阿里云短信服务（验证码），统一错误处理格式，接口文档与测试服务器部署</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <div class="card-icon driver">🛵</div>
+                    <div>
+                        <div class="card-title">司机端</div>
+                        <div class="card-role">司机接单与状态</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>React Native + Expo，导航栈（注册 / 登录 / 首页）</li>
+                        <li>司机注册 UI 与表单校验（react-hook-form），登录（含验证码）</li>
+                        <li>定位权限申请、获取并显示当前定位，每 30 秒定时上报定位</li>
+                        <li>接客状态切换（空闲 / 接客）及状态同步接口</li>
+                        <li>「我的」页面与待审核状态提示，退出登录</li>
+                        <li>网络异常与错误提示，定位上报防抖与边缘场景处理</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <div class="card-icon user">📱</div>
+                    <div>
+                        <div class="card-title">用户端</div>
+                        <div class="card-role">乘客找司机与联系</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>React Native + Expo，用户注册 / 登录（含验证码）</li>
+                        <li>高德地图集成与当前定位，获取附近司机列表接口</li>
+                        <li>地图 Marker 标记司机（分色区分状态），司机信息弹窗与点击交互</li>
+                        <li>拨打电话功能，个人中心与实名认证状态展示</li>
+                        <li>无司机 / 无定位等边缘场景处理，地图性能优化（缓存 / 懒加载）与加载动画</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <div class="card-icon admin">📊</div>
+                    <div>
+                        <div class="card-title">管理端</div>
+                        <div class="card-role">审核与运营看板</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li>React Native + Expo 项目初始化</li>
+                        <li>司机审核列表页（对接待审核司机接口）</li>
+                        <li>审核通过 / 驳回操作及接口对接</li>
+                        <li>数据统计面板与图表展示</li>
+                        <li>与服务端审核、用户列表、统计接口联调与验收</li>
+                    </ul>
+                </div>
+            </article>
+        </div>
+
+        <footer>
+            基于《摩迪》90 天开发进度表梳理 · 四端：服务端、司机端、用户端、管理端
+        </footer>
+    </div>
+</body>
+</html>

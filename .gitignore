@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+
+# 环境与密钥（不要提交到 Git）
+.env
+.env.local
+.env.*.local
+
+# 日志与临时文件
+*.log
+.DS_Store
+*.swp
+*.swo
+
+# IDE（按需保留，若团队统一可提交 .vscode）
+# .vscode/
+# .idea/
+
+# 其他
+data/
