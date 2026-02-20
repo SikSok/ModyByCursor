@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../utils/jwt';
+import { AppError } from '../middleware/errorHandler';
 
 export class UserService {
   async register(phone: string, password: string, name?: string) {
@@ -38,7 +39,9 @@ export class UserService {
   async login(phone: string, password: string) {
     const user = await User.findOne({ where: { phone } });
     if (!user) {
-      throw new Error('手机号或密码错误');
+      const err = new Error('该手机号未注册，请先注册') as AppError;
+      err.statusCode = 404;
+      throw err;
     }
 
     if (user.status !== 1) {

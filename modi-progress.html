@@ -137,9 +137,46 @@
         .phase-04 { background-color: #3498db; }
         .phase-05 { background-color: #9b59b6; }
         .phase-06 { background-color: #1abc9c; }
+        /* 自定义右键菜单 */
+        #contextMenu {
+            position: fixed;
+            z-index: 10000;
+            min-width: 160px;
+            padding: 6px 0;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            font-size: 14px;
+        }
+        #contextMenu.show { display: block; }
+        #contextMenu .menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            color: #2c3e50;
+        }
+        #contextMenu .menu-item:hover {
+            background: #f0f7ff;
+            color: #3498db;
+        }
+        #contextMenu .menu-item.sep {
+            height: 1px;
+            margin: 4px 0;
+            padding: 0;
+            background: #e0e0e0;
+            cursor: default;
+        }
+        #contextMenu .menu-item.sep:hover { background: #e0e0e0; }
     </style>
 </head>
 <body>
+    <!-- 右键菜单 -->
+    <div id="contextMenu">
+        <div class="menu-item" data-action="openInBrowser">🌐 在浏览器中打开</div>
+        <div class="menu-item sep"></div>
+        <div class="menu-item" data-action="copyUrl">📋 复制页面地址</div>
+    </div>
     <div class="container">
         <h1>🚗 《摩迪》App · 90天开发攻坚进度表</h1>
         
@@ -497,6 +534,41 @@
 
         // 页面加载时初始化
         window.addEventListener('DOMContentLoaded', initValues);
+
+        // 右键菜单：在浏览器中打开 / 复制地址
+        (function () {
+            const menu = document.getElementById('contextMenu');
+            const openInBrowser = () => {
+                const url = window.location.href;
+                window.open(url, '_blank', 'noopener');
+            };
+            const copyUrl = () => {
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('已复制到剪贴板：' + url);
+                }).catch(() => {
+                    prompt('请手动复制地址：', url);
+                });
+            };
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                menu.classList.add('show');
+                menu.style.left = e.clientX + 'px';
+                menu.style.top = e.clientY + 'px';
+            });
+            document.addEventListener('click', function () {
+                menu.classList.remove('show');
+            });
+            menu.querySelectorAll('.menu-item[data-action]').forEach(item => {
+                item.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const action = this.dataset.action;
+                    if (action === 'openInBrowser') openInBrowser();
+                    if (action === 'copyUrl') copyUrl();
+                    menu.classList.remove('show');
+                });
+            });
+        })();
     </script>
 </body>
 </html>

@@ -7,14 +7,24 @@ export type ApiResponse<T> = {
 };
 
 async function request<T>(path: string, options?: RequestInit): Promise<ApiResponse<T>> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {})
-    },
-    ...options
-  });
-  const json = (await res.json()) as ApiResponse<T>;
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers || {})
+      },
+      ...options
+    });
+  } catch (e) {
+    throw new Error('网络异常，请检查网络连接');
+  }
+  let json: ApiResponse<T>;
+  try {
+    json = (await res.json()) as ApiResponse<T>;
+  } catch {
+    throw new Error('网络异常，请稍后重试');
+  }
   if (!res.ok || json.success === false) {
     throw new Error(json.message || `请求失败(${res.status})`);
   }
@@ -63,6 +73,25 @@ export async function setAvailability(token: string, is_available: boolean) {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ is_available })
+  });
+}
+
+export interface DriverProfile {
+  id: number;
+  phone: string;
+  name: string;
+  avatar?: string;
+  id_card?: string;
+  license_plate?: string;
+  vehicle_type?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  is_available?: boolean;
+}
+
+export async function getDriverProfile(token: string) {
+  return request<DriverProfile>('/drivers/profile', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
   });
 }
 

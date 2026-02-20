@@ -12,7 +12,7 @@ import bcrypt from 'bcryptjs';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // 中间件
 app.use(corsMiddleware);
@@ -60,9 +60,10 @@ const connectDatabase = async () => {
 const startServer = async () => {
   await connectDatabase();
   
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-    console.log(`📝 API 文档: http://localhost:${PORT}/api/health`);
+    console.log(`📝 本机访问: http://localhost:${PORT}/api/health`);
+    console.log(`📱 手机访问: 请用电脑局域网 IP (如 http://192.168.x.x:${PORT}/api)`);
   });
 };
 

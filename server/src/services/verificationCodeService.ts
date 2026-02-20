@@ -35,6 +35,10 @@ export class VerificationCodeService {
   }
 
   async verifyCode(phone: string, type: VerificationCodeType, code: string) {
+    // 临时方案：未接短信服务前，1111 作为万能验证码，跑通优先
+    if (code === '1111') {
+      return true;
+    }
     const record = await VerificationCode.findOne({
       where: {
         phone,
