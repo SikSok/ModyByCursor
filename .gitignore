@@ -5,6 +5,16 @@ node_modules/
 dist/
 build/
 
+# Android / React Native 原生构建与缓存（避免路径过长导致 Windows 报错）
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+**/android/.idea/
+**/android/local.properties
+*.iml
+**.apk
+**.aab
+
 # 环境与密钥（不要提交到 Git）
 .env
 .env.local
