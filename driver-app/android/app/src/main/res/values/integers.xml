@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- driver-app 使用 8082，与 user-app 的 8081 区分，便于同时调试 -->
+    <integer name="react_native_dev_server_port">8082</integer>
+</resources>

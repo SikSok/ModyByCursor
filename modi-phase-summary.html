@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摩迪 · 阶段性总结与后续展望</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        .progress-board {
+            margin-bottom: 40px;
+        }
+        .progress-board h2 {
+            color: #3498db;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        .board-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .board-table th, .board-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .board-table th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .task-section {
+            margin-bottom: 40px;
+        }
+        .task-section h3 {
+            color: #2980b9;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #2980b9;
+        }
+        .task-section p {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .task-table th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+            padding: 12px 10px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+        .task-table td {
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        .task-table td:first-child {
+            font-weight: 600;
+            color: #34495e;
+        }
+        .phase-label {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: white;
+        }
+        .phase-01 { background-color: #e74c3c; }
+        .phase-02 { background-color: #f39c12; }
+        .phase-03 { background-color: #2ecc71; }
+        .phase-04 { background-color: #3498db; }
+        .phase-05 { background-color: #9b59b6; }
+        .phase-06 { background-color: #1abc9c; }
+        ul {
+            margin: 10px 0 10px 20px;
+            color: #555;
+        }
+        .highlight {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 《摩迪》· 阶段性总结与后续展望</h1>
+
+        <!-- 阶段性总结 -->
+        <div class="progress-board">
+            <h2>📊 本阶段完成情况</h2>
+            <table class="board-table">
+                <thead>
+                    <tr>
+                        <th>类别</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="phase-label phase-01">环境</span></td>
+                        <td>四端项目骨架就绪；用户端、司机端可在本机通过数据线同时调试（Metro 双端口 8081/8082）。</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase-label phase-02">Android</span></td>
+                        <td>user-app / driver-app 均完成 Gradle、Babel、Metro 配置；统一 JDK 使用本机 Android Studio JBR，避免联网下载；Gradle 8.6 与 RN 插件兼容。</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase-label phase-03">提交规范</span></td>
+                        <td>根目录与各子项目 .gitignore 已整理；提交 package-lock.json，不提交 node_modules、local.properties、.env；README 中写明换机拉取后的必做步骤。</td>
+                    </tr>
+                    <tr>
+                        <td><span class="phase-label phase-04">文档</span></td>
+                        <td>根目录 README（结构、运行、换机指引）、本阶段性总结与后续展望 HTML。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 后续工作展望与建议 -->
+        <div class="task-section">
+            <h3>📝 后续工作展望与建议</h3>
+            <p>在保证「换机拉取即可跑」的前提下，建议按以下顺序推进。</p>
+
+            <table class="task-table">
+                <thead>
+                    <tr>
+                        <th>优先级</th>
+                        <th>建议项</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>P0</td>
+                        <td>服务端接口与数据库</td>
+                        <td>按 modi-api-design / modi-database-design 打通注册、登录、定位上报、附近司机等接口；确保 user-app / driver-app 能连真实后端。</td>
+                    </tr>
+                    <tr>
+                        <td>P0</td>
+                        <td>司机端核心流程</td>
+                        <td>定位权限、定时上报、接客状态切换与接口对接；与进度表第三阶段任务对齐。</td>
+                    </tr>
+                    <tr>
+                        <td>P1</td>
+                        <td>用户端核心流程</td>
+                        <td>地图、附近司机展示、选司机等；与进度表第四阶段任务对齐。</td>
+                    </tr>
+                    <tr>
+                        <td>P1</td>
+                        <td>管理端与审核</td>
+                        <td>司机审核、用户列表、数据统计；与进度表第五阶段任务对齐。</td>
+                    </tr>
+                    <tr>
+                        <td>P2</td>
+                        <td>联调与上架准备</td>
+                        <td>四端联调、iOS 配置与打包、提审准备；与进度表第六阶段任务对齐。</td>
+                    </tr>
+                    <tr>
+                        <td>P2</td>
+                        <td>可选：RN 升级</td>
+                        <td>当前 0.74 可稳定使用；若后续需要新特性，再按官方升级助手做一次 RN 升级并全量回归。</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight">
+                <strong>换机开发提醒</strong><br>
+                新电脑拉取后：各目录执行 <code>npm install</code>；为 user-app / driver-app 的 <code>android</code> 目录补全 <code>local.properties</code>（<code>sdk.dir=本机Android_SDK路径</code>）。详见根目录 <code>README.md</code>。
+            </div>
+        </div>
+
+        <div class="task-section">
+            <h3>📎 相关文档</h3>
+            <ul>
+                <li><code>modi-progress.html</code> — 90 天开发进度表</li>
+                <li><code>modi-api-design.html</code> — 接口设计</li>
+                <li><code>modi-tech-stack.html</code> — 技术栈与版本</li>
+                <li><code>README.md</code> — 项目结构、运行方式、换机必做步骤</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

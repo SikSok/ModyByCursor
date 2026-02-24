@@ -4,10 +4,10 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "react-native start",
-    "dev": "node scripts/set-api.js dev && react-native start",
-    "pre": "node scripts/set-api.js pre && react-native start",
-    "android": "react-native run-android",
+    "start": "react-native start --port 8082",
+    "dev": "node scripts/set-api.js dev && react-native start --port 8082",
+    "pre": "node scripts/set-api.js pre && react-native start --port 8082",
+    "android": "react-native run-android --port 8082",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
@@ -17,14 +17,15 @@
     "react-native": "0.74.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/plugin-transform-class-properties": "^7.28.6",
+    "@babel/plugin-transform-private-methods": "^7.28.6",
+    "@react-native/metro-config": "^0.74.0",
     "@types/react": "^18.2.46",
     "@types/react-native": "^0.73.0",
-    "typescript": "^5.3.3",
-    "@babel/core": "^7.23.7",
     "babel-jest": "^29.7.0",
     "metro-react-native-babel-preset": "^0.77.0",
-    "react-test-renderer": "18.2.0"
+    "react-test-renderer": "18.2.0",
+    "typescript": "^5.3.3"
   }
 }
-
-

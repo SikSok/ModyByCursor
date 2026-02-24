@@ -1,11 +1,15 @@
-# 依赖
+# ========== 提交说明 ==========
+# 请提交：源码、package.json、package-lock.json、各项目配置（含 android 非本地路径配置）
+# 不提交：node_modules、构建产物、本地路径(local.properties)、.env、密钥、缓存
+
+# 依赖（务必提交 package-lock.json，换机后 npm install 即可复现依赖）
 node_modules/
 
 # 构建产物
 dist/
 build/
 
-# Android / React Native 原生构建与缓存（避免路径过长导致 Windows 报错）
+# Android / React Native：构建缓存与本地路径（换机后需自行生成 local.properties）
 **/android/.gradle/
 **/android/build/
 **/android/app/build/
@@ -15,20 +19,16 @@ build/
 **.apk
 **.aab
 
-# 环境与密钥（不要提交到 Git）
+# 环境与密钥（切勿提交）
 .env
 .env.local
 .env.*.local
 
-# 日志与临时文件
+# 日志与临时
 *.log
 .DS_Store
 *.swp
 *.swo
-
-# IDE（按需保留，若团队统一可提交 .vscode）
-# .vscode/
-# .idea/
 
 # 其他
 data/
