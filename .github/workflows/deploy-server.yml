@@ -1,0 +1,26 @@
+# 推送到 main 且 server 有变更时，SSH 到 ECS 执行部署脚本
+# 需在 GitHub 仓库 Settings → Secrets 中配置：DEPLOY_HOST、DEPLOY_USER、DEPLOY_KEY
+name: Deploy Server to ECS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            cd /opt/mody || { echo "请先在 ECS 上克隆仓库到 /opt/mody 并配置 .env"; exit 1; }
+            chmod +x server/scripts/deploy.sh
+            server/scripts/deploy.sh
