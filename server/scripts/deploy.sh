@@ -2,6 +2,10 @@
 # Server 一键部署脚本（在 ECS 上使用）
 # 用法（在仓库根目录执行）：server/scripts/deploy.sh
 # 或：ssh user@ECS "cd /opt/mody && server/scripts/deploy.sh"
+#
+# 国内 ECS 访问 GitHub 常超时，可从 Gitee 拉取：
+#   git remote add gitee https://gitee.com/你的用户名/ModyByCursor.git
+#   export DEPLOY_REMOTE=gitee   # 可选，不设则用 origin
 set -e
 
 # 仓库根目录（脚本位于 server/scripts/deploy.sh）
@@ -12,12 +16,17 @@ cd "$REPO_ROOT"
 echo "========== 部署 Mody Server =========="
 echo "仓库目录: $REPO_ROOT"
 
-# 拉取最新代码（默认 main，可改为你的默认分支）
+# 拉取远程：国内 ECS 建议用 Gitee（DEPLOY_REMOTE=gitee），否则用 origin
 BRANCH="${DEPLOY_BRANCH:-main}"
-echo "拉取分支: $BRANCH"
-git fetch origin "$BRANCH" --quiet
+REMOTE="${DEPLOY_REMOTE:-origin}"
+# 若未指定且存在 gitee 远程，则优先用 gitee（国内 ECS 访问 GitHub 常超时）
+if [[ -z "${DEPLOY_REMOTE}" ]] && git remote get-url gitee &>/dev/null; then
+  REMOTE=gitee
+fi
+echo "拉取远程: $REMOTE 分支: $BRANCH"
+git fetch "$REMOTE" "$BRANCH" --quiet
 git checkout "$BRANCH" --quiet
-git pull origin "$BRANCH" --quiet
+git pull "$REMOTE" "$BRANCH" --quiet
 
 cd "$SERVER_DIR"
 echo "安装依赖 (npm ci)..."
