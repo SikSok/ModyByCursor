@@ -1,0 +1,491 @@
+const API_BASE_URL = require('../config/apiBaseUrl').url;
+
+/** 请求超时时间（毫秒） */
+const REQUEST_TIMEOUT_MS = 5000;
+
+/** 使用 react-native-blob-util 发请求（原生层实现，可规避 Android 上 fetch/XHR 收不到 4xx 响应的问题） */
+let blobUtilFetch: ((method: string, url: string, headers: Record<string, string>, body: string) => Promise<any>) | null = null;
+try {
+  const RNFB = require('react-native-blob-util');
+  const api = RNFB?.default ?? RNFB;
+  if (api && typeof api.fetch === 'function') {
+    blobUtilFetch = api.fetch.bind(api);
+  }
+} catch {
+  // 非 RN 或未安装时忽略
+}
+
+/**
+ * 使用 XMLHttpRequest 发请求并读取响应。
+ * React Native Android 上 fetch 对 4xx 响应的 res.text() 有已知的卡住问题，XHR 的 responseText 可正常读取。
+ */
+function requestWithXHR<T>(
+  method: string,
+  url: string,
+  body: string | undefined,
+  timeoutMs: number,
+  params?: unknown
+): Promise<ApiResponse<T>> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const timer = setTimeout(() => {
+      xhr.abort();
+    }, timeoutMs);
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState !== 4) return;
+      clearTimeout(timer);
+
+      const status = xhr.status;
+      const responseText = xhr.responseText || '';
+      if (__DEV__) {
+        console.log('[API XHR] readyState=4', 'status=', status, 'bodyLen=', responseText.length);
+      }
+
+      let json: (ApiResponse<T> & { message?: string }) | null = null;
+      try {
+        json = responseText ? (JSON.parse(responseText) as ApiResponse<T> & { message?: string }) : ({} as any);
+      } catch {
+        logApiError({
+          method,
+          url,
+          params,
+          status,
+          message: '响应不是合法 JSON',
+          body: responseText.slice(0, 500),
+        });
+        reject(new Error(`服务端异常(${status})，请稍后重试`));
+        return;
+      }
+
+      if (status >= 400 || json.success === false) {
+        const message = (json && 'message' in json ? json.message : undefined) || `服务返回错误(${status})，请稍后重试`;
+        logApiError({
+          method,
+          url,
+          params,
+          status,
+          message,
+          body: responseText.slice(0, 500),
+        });
+        const err = new Error(message) as Error & { code?: string };
+        if (json && typeof (json as any).code === 'string') err.code = (json as any).code;
+        reject(err);
+        return;
+      }
+
+      resolve(json as ApiResponse<T>);
+    };
+
+    xhr.ontimeout = () => {
+      clearTimeout(timer);
+      logApiError({ method, url, params, message: '请求超时' });
+      reject(new Error('请求超时，请检查网络连接或稍后重试'));
+    };
+
+    xhr.onerror = () => {
+      clearTimeout(timer);
+      logApiError({ method, url, params, message: '网络请求失败', err: 'onerror' });
+      reject(new Error('网络异常，请检查手机网络；开发时请确认电脑已启动后端服务'));
+    };
+
+    xhr.onabort = () => {
+      clearTimeout(timer);
+      logApiError({ method, url, params, message: '请求已取消/超时' });
+      reject(new Error('请求超时，请检查网络连接或稍后重试'));
+    };
+
+    try {
+      xhr.open(method, url);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      // 仅用 setTimeout(abort) 做超时，不设 xhr.timeout（部分 RN Android 上 xhr.timeout 不可靠）
+      if (__DEV__) {
+        console.log('[API XHR] 发送请求', method, url);
+      }
+      xhr.send(body ?? undefined);
+    } catch (err) {
+      clearTimeout(timer);
+      logApiError({ method, url, params, err });
+      reject(new Error('网络异常，请检查手机网络'));
+    }
+  });
+}
+
+export type ApiResponse<T> = {
+  success: boolean;
+  message?: string;
+  data: T;
+};
+
+/**
+ * 将接口报错详情输出到 Metro 终端（npm start 所在终端），便于排查
+ */
+function logApiError(details: {
+  method: string;
+  url: string;
+  params?: unknown;
+  status?: number;
+  statusText?: string;
+  message?: string;
+  body?: string;
+  err?: unknown;
+}) {
+  const lines = [
+    '────────── [API 报错] ──────────',
+    `接口: ${details.method} ${details.url}`,
+    details.params != null ? `参数: ${JSON.stringify(details.params, null, 2)}` : null,
+    details.status != null ? `HTTP 状态: ${details.status} ${details.statusText || ''}` : null,
+    details.message ? `报错原因: ${details.message}` : null,
+    details.body ? `响应内容: ${details.body}` : null,
+    details.err != null ? `异常: ${String(details.err)}` : null,
+    '────────────────────────────────',
+  ].filter(Boolean);
+  console.error('\n' + lines.join('\n') + '\n');
+}
+
+/** 用户可读的报错说明：优先使用接口返回的 message，其次区分「没网/超时」与「服务端业务错误」 */
+export function getUserFacingMessage(error: unknown, fallback: string): string {
+  if (error == null) return fallback;
+  const msg =
+    typeof (error as any)?.message === 'string'
+      ? (error as any).message
+      : String(error);
+  const trimmed = msg?.trim();
+  if (trimmed && trimmed !== '请求失败') return trimmed;
+  if (/网络|超时|连接|无法/.test(trimmed || '')) return trimmed || fallback;
+  return fallback;
+}
+
+/**
+ * 通过 Blob + FileReader 读取响应体，避免 Android 上 res.text()/res.json() 或 XHR readyState 不回调的问题。
+ */
+function readResponseAsText(res: Response, timeoutMs: number): Promise<string> {
+  return Promise.race([
+    res.blob().then(
+      (blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(String(reader.result ?? ''));
+          reader.onerror = () => reject(new Error('BODY_READ_FAILED'));
+          reader.readAsText(blob);
+        })
+    ),
+    new Promise<string>((_, reject) =>
+      setTimeout(() => reject(new Error('BODY_READ_TIMEOUT')), timeoutMs)
+    ),
+  ]);
+}
+
+async function request<T>(
+  path: string,
+  options?: RequestInit & { _params?: unknown }
+): Promise<ApiResponse<T>> {
+  const method = (options?.method || 'GET').toUpperCase();
+  const url = `${API_BASE_URL}${path}`;
+  const params = options?._params;
+  const body = options?.body as string | undefined;
+
+  console.log(`[API 请求] ${method} ${path} -> ${url}`);
+
+  if (blobUtilFetch) {
+    return requestWithBlobUtil<T>(method, url, body, params);
+  }
+  return requestWithFetch<T>(method, url, body, options, params);
+}
+
+/** react-native-blob-util：原生网络栈，可正常收到 4xx 响应体 */
+function requestWithBlobUtil<T>(
+  method: string,
+  url: string,
+  body: string | undefined,
+  params?: unknown
+): Promise<ApiResponse<T>> {
+  return Promise.race([
+    new Promise<ApiResponse<T>>((resolve, reject) => {
+      blobUtilFetch!(method, url, { 'Content-Type': 'application/json' }, body ?? '')
+        .then((res) => {
+          const status = res.info().status;
+          let bodyText = '';
+          try {
+            bodyText = res.text();
+          } catch {
+            bodyText = '';
+          }
+          if (typeof __DEV__ !== 'undefined' && __DEV__) {
+            console.log('[API BlobUtil] 已读响应 status=', status, 'bodyLen=', bodyText.length);
+          }
+          let json: (ApiResponse<T> & { message?: string }) | null = null;
+          try {
+            json = bodyText ? (JSON.parse(bodyText) as ApiResponse<T> & { message?: string }) : ({} as any);
+          } catch {
+            logApiError({
+              method,
+              url,
+              params,
+              status,
+              message: '响应不是合法 JSON',
+              body: bodyText.slice(0, 500),
+            });
+            reject(new Error(`服务端异常(${status})，请稍后重试`));
+            return;
+          }
+          if (status >= 400 || (json && json.success === false)) {
+            const message = (json && 'message' in json ? json.message : undefined) || `服务返回错误(${status})，请稍后重试`;
+            logApiError({ method, url, params, status, message });
+            const err = new Error(message) as Error & { code?: string };
+            if (json && typeof (json as any).code === 'string') err.code = (json as any).code;
+            reject(err);
+            return;
+          }
+          resolve(json as ApiResponse<T>);
+        })
+        .catch((err: any, statusCode?: number) => {
+          logApiError({
+            method,
+            url,
+            params,
+            status: statusCode,
+            message: err?.message || '网络请求失败',
+            err,
+          });
+          reject(
+            new Error(
+              err?.message || statusCode != null
+                ? `服务返回错误(${statusCode})，请稍后重试`
+                : '网络异常，请检查手机网络；开发时请确认电脑已启动后端服务'
+            )
+          );
+        });
+    }),
+    new Promise<ApiResponse<T>>((_, reject) =>
+      setTimeout(() => reject(new Error('请求超时，请检查网络连接或稍后重试')), REQUEST_TIMEOUT_MS)
+    ),
+  ]);
+}
+
+/** 使用 fetch + Blob/FileReader 读响应（兜底） */
+async function requestWithFetch<T>(
+  method: string,
+  url: string,
+  body: string | undefined,
+  options?: RequestInit & { _params?: unknown },
+  params?: unknown
+): Promise<ApiResponse<T>> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(options?.headers as Record<string, string>) },
+      body,
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    const isAbort = err?.name === 'AbortError';
+    logApiError({
+      method,
+      url,
+      params,
+      message: isAbort ? '请求超时' : '网络请求失败',
+      err,
+    });
+    if (isAbort) throw new Error('请求超时，请检查网络连接或稍后重试');
+    throw new Error('网络异常，请检查手机网络；开发时请确认电脑已启动后端服务');
+  }
+  clearTimeout(timeoutId);
+
+  const BODY_READ_MS = 4000;
+  let bodyText: string;
+  try {
+    bodyText = await readResponseAsText(res, BODY_READ_MS);
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log('[API] 已读响应 status=', res.status, 'bodyLen=', bodyText.length);
+    }
+  } catch (e: any) {
+    if (e?.message === 'BODY_READ_TIMEOUT') {
+      logApiError({ method, url, params, status: res.status, message: '读取响应超时' });
+      throw new Error('服务响应超时，请稍后重试');
+    }
+    logApiError({ method, url, params, status: res.status, message: '读取响应失败', err: e });
+    throw new Error('服务端响应异常，请稍后重试');
+  }
+
+  let json: (ApiResponse<T> & { message?: string }) | null = null;
+  try {
+    json = bodyText ? (JSON.parse(bodyText) as ApiResponse<T> & { message?: string }) : ({} as any);
+  } catch {
+    logApiError({
+      method,
+      url,
+      params,
+      status: res.status,
+      message: '响应不是合法 JSON',
+      body: bodyText.slice(0, 500),
+    });
+    throw new Error(`服务端异常(${res.status})，请稍后重试`);
+  }
+
+  if (!res.ok || (json && json.success === false)) {
+    const message = (json && 'message' in json ? json.message : undefined) || `服务返回错误(${res.status})，请稍后重试`;
+    logApiError({ method, url, params, status: res.status, message });
+    const err = new Error(message) as Error & { code?: string };
+    if (json && typeof (json as any).code === 'string') err.code = (json as any).code;
+    throw err;
+  }
+
+  return json as ApiResponse<T>;
+}
+
+function jsonBody(params: object, method: string, path: string) {
+  return {
+    body: JSON.stringify(params),
+    _params: params,
+  } as RequestInit & { _params: unknown };
+}
+
+export async function sendCode(phone: string, type: 'register' | 'login' | 'reset_password') {
+  return request<{ code?: string; expires_at: string }>(
+    '/verification-codes/send',
+    { method: 'POST', ...jsonBody({ phone, type }, 'POST', '/verification-codes/send') }
+  );
+}
+
+export async function unifiedLogin(params: { phone: string; password: string }) {
+  return request<
+    | {
+        user: { token: string; id: number; phone: string; name?: string; avatar?: string } | null;
+        driver: {
+          token: string;
+          id: number;
+          phone: string;
+          name: string;
+          avatar?: string;
+          status: string;
+          is_available: boolean;
+        } | null;
+      }
+  >('/auth/login', { method: 'POST', ...jsonBody(params, 'POST', '/auth/login') });
+}
+
+export async function resetPassword(params: { phone: string; code: string; new_password: string }) {
+  return request<null>(
+    '/auth/reset-password',
+    { method: 'POST', ...jsonBody(params, 'POST', '/auth/reset-password') }
+  );
+}
+
+export async function userRegister(params: {
+  phone: string;
+  password: string;
+  name?: string;
+  code: string;
+}) {
+  return request<{ token: string; user: any }>('/users/register', {
+    method: 'POST',
+    ...jsonBody(params, 'POST', '/users/register'),
+  });
+}
+
+export async function userLogin(params: { phone: string; password: string }) {
+  return request<{ token: string; user: any }>('/users/login', {
+    method: 'POST',
+    ...jsonBody(params, 'POST', '/users/login'),
+  });
+}
+
+export async function getNearbyDrivers(params: {
+  lat: number;
+  lng: number;
+  radius_km?: number;
+}) {
+  const q = new URLSearchParams({
+    lat: String(params.lat),
+    lng: String(params.lng),
+    radius_km: String(params.radius_km ?? 10),
+  });
+  return request<Array<{
+    driver: { id: number; phone?: string; name: string; avatar?: string; vehicle_type?: string };
+    location: { latitude: number; longitude: number };
+    distance_km: number;
+  }>>(`/users/nearby-drivers?${q.toString()}`, { method: 'GET' });
+}
+
+export async function driverRegister(params: {
+  phone: string;
+  password: string;
+  name: string;
+  code: string;
+  id_card?: string;
+  license_plate?: string;
+  vehicle_type?: string;
+}) {
+  return request<{ token: string; driver: any }>('/drivers/register', {
+    method: 'POST',
+    ...jsonBody(params, 'POST', '/drivers/register'),
+  });
+}
+
+export async function driverLogin(params: { phone: string; password: string }) {
+  return request<{ token: string; driver: any }>('/drivers/login', {
+    method: 'POST',
+    ...jsonBody(params, 'POST', '/drivers/login'),
+  });
+}
+
+export async function reportLocation(
+  token: string,
+  payload: { latitude: number; longitude: number; accuracy?: number }
+) {
+  return request<any>('/drivers/location', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody(payload, 'POST', '/drivers/location'),
+  });
+}
+
+export async function setAvailability(token: string, is_available: boolean) {
+  return request<any>('/drivers/availability', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody({ is_available }, 'PATCH', '/drivers/availability'),
+  });
+}
+
+export async function getDriverProfile(token: string) {
+  return request<{
+    id: number;
+    phone: string;
+    name: string;
+    avatar?: string;
+    id_card?: string;
+    id_card_front?: string;
+    id_card_back?: string;
+    license_plate?: string;
+    license_plate_photo?: string;
+    vehicle_type?: string;
+    status: 'pending' | 'approved' | 'rejected';
+    is_available: boolean;
+  }>('/drivers/profile', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function submitVerification(
+  token: string,
+  payload: {
+    id_card_front: string;
+    id_card_back: string;
+    license_plate: string;
+    license_plate_photo?: string;
+  }
+) {
+  return request<any>('/drivers/verification', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody(payload, 'POST', '/drivers/verification'),
+  });
+}

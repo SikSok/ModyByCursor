@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
-export type VerificationCodeType = 'register' | 'login';
+export type VerificationCodeType = 'register' | 'login' | 'reset_password';
 
 interface VerificationCodeAttributes {
   id: number;
@@ -45,7 +45,7 @@ VerificationCode.init(
       allowNull: false
     },
     type: {
-      type: DataTypes.ENUM('register', 'login'),
+      type: DataTypes.ENUM('register', 'login', 'reset_password'),
       allowNull: false
     },
     expires_at: {

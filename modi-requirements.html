@@ -176,17 +176,17 @@
         <header>
             <div class="doc-badge">需求文档</div>
             <h1>摩的 App 需求文档</h1>
-            <p class="subtitle">四端核心功能清单 · 基于 90 天开发进度梳理</p>
+            <p class="subtitle">C 端一体化（mody-app）+ 服务端 + 管理端 · 基于 90 天开发进度梳理</p>
         </header>
 
         <section class="overview">
             <h2>产品目的与目标</h2>
             <p>
-                <strong>摩迪（摩的）App</strong> 旨在连接乘客与摩托车司机，提供「附近司机可见、一键联系」的短途摩的出行服务。目标用户包括：需要摩的出行的乘客、提供服务的司机、以及进行审核与数据运营的管理员。产品通过<strong>服务端</strong>统一接口与数据、<strong>司机端</strong>实时定位与接客状态、<strong>用户端</strong>地图选司机与联系、<strong>管理端</strong>司机审核与数据看板，在 90 天内完成四端从 0 到 1 的交付与 iOS 上架。
+                <strong>摩迪（摩的）App</strong> 旨在连接乘客与摩托车司机，提供「附近司机可见、一键联系」的短途摩的出行服务。目标用户包括：需要摩的出行的乘客、提供服务的司机、以及进行审核与数据运营的管理员。产品通过<strong>服务端</strong>统一接口与数据、<strong>mody-app</strong>（C 端一体化：注册后选择身份，乘客/司机对应不同主界面，身份可在个人中心切换）、<strong>管理端</strong>司机审核与数据看板，在 90 天内完成从 0 到 1 的交付与 iOS 上架。<em>注：原 user-app、driver-app 已整合为 mody-app，旧目录暂保留、后续再删除。</em>
             </p>
         </section>
 
-        <h2 class="section-title">四端核心功能清单</h2>
+        <h2 class="section-title">三端核心功能清单（mody-app + server + admin-web）</h2>
         <div class="cards">
             <article class="card">
                 <div class="card-header">
@@ -210,39 +210,18 @@
 
             <article class="card">
                 <div class="card-header">
-                    <div class="card-icon driver">🛵</div>
-                    <div>
-                        <div class="card-title">司机端</div>
-                        <div class="card-role">司机接单与状态</div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <ul>
-                        <li>React Native + Expo，导航栈（注册 / 登录 / 首页）</li>
-                        <li>司机注册 UI 与表单校验（react-hook-form），登录（含验证码）</li>
-                        <li>定位权限申请、获取并显示当前定位，每 30 秒定时上报定位</li>
-                        <li>接客状态切换（空闲 / 接客）及状态同步接口</li>
-                        <li>「我的」页面与待审核状态提示，退出登录</li>
-                        <li>网络异常与错误提示，定位上报防抖与边缘场景处理</li>
-                    </ul>
-                </div>
-            </article>
-
-            <article class="card">
-                <div class="card-header">
                     <div class="card-icon user">📱</div>
                     <div>
-                        <div class="card-title">用户端</div>
-                        <div class="card-role">乘客找司机与联系</div>
+                        <div class="card-title">mody-app（C 端一体化）</div>
+                        <div class="card-role">乘客与司机同一 APP，身份选择与个人中心切换</div>
                     </div>
                 </div>
                 <div class="card-body">
                     <ul>
-                        <li>React Native + Expo，用户注册 / 登录（含验证码）</li>
-                        <li>高德地图集成与当前定位，获取附近司机列表接口</li>
-                        <li>地图 Marker 标记司机（分色区分状态），司机信息弹窗与点击交互</li>
-                        <li>拨打电话功能，个人中心与实名认证状态展示</li>
-                        <li>无司机 / 无定位等边缘场景处理，地图性能优化（缓存 / 懒加载）与加载动画</li>
+                        <li>React Native，统一注册/登录后<strong>身份选择</strong>（乘客 / 司机），不同身份进入不同主界面；<strong>个人中心可切换身份</strong></li>
+                        <li><strong>乘客身份</strong>：高德地图与当前定位、附近司机列表与 Marker（分色）、司机信息弹窗、拨打电话、个人中心与实名认证状态</li>
+                        <li><strong>司机身份</strong>：司机注册/资料、定位权限与定时上报、接客状态切换、待审核提示、「我的」与退出登录</li>
+                        <li>验证码登录、网络异常与错误提示、边缘场景处理与地图性能优化</li>
                     </ul>
                 </div>
             </article>
@@ -268,7 +247,7 @@
         </div>
 
         <footer>
-            基于《摩迪》90 天开发进度表梳理 · 四端：服务端、司机端、用户端、管理端
+            基于《摩迪》90 天开发进度表梳理 · 三端：服务端、mody-app（C 端一体化）、管理端；原 user-app/driver-app 已整合为 mody-app，旧目录暂保留
         </footer>
     </div>
 </body>

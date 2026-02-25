@@ -8,7 +8,10 @@ interface DriverAttributes {
   name: string;
   avatar?: string;
   id_card?: string;
+  id_card_front?: string;
+  id_card_back?: string;
   license_plate?: string;
+  license_plate_photo?: string;
   vehicle_type?: string;
   status: 'pending' | 'approved' | 'rejected';
   is_available: boolean;
@@ -23,7 +26,10 @@ interface DriverCreationAttributes
     | 'id'
     | 'avatar'
     | 'id_card'
+    | 'id_card_front'
+    | 'id_card_back'
     | 'license_plate'
+    | 'license_plate_photo'
     | 'vehicle_type'
     | 'status'
     | 'is_available'
@@ -39,7 +45,10 @@ class Driver extends Model<DriverAttributes, DriverCreationAttributes> implement
   public name!: string;
   public avatar?: string;
   public id_card?: string;
+  public id_card_front?: string;
+  public id_card_back?: string;
   public license_plate?: string;
+  public license_plate_photo?: string;
   public vehicle_type?: string;
   public status!: 'pending' | 'approved' | 'rejected';
   public is_available!: boolean;
@@ -76,8 +85,20 @@ Driver.init(
       type: DataTypes.STRING(18),
       allowNull: true
     },
+    id_card_front: {
+      type: DataTypes.STRING(500),
+      allowNull: true
+    },
+    id_card_back: {
+      type: DataTypes.STRING(500),
+      allowNull: true
+    },
     license_plate: {
       type: DataTypes.STRING(20),
+      allowNull: true
+    },
+    license_plate_photo: {
+      type: DataTypes.STRING(500),
       allowNull: true
     },
     vehicle_type: {

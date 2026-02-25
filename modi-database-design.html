@@ -274,7 +274,7 @@
         <section class="overview">
             <h2>设计说明</h2>
             <p>
-                本数据库设计支持摩的 App 四端核心功能：<strong>用户注册登录</strong>、<strong>司机注册审核</strong>、<strong>实时定位上报</strong>、<strong>附近司机查询</strong>、<strong>短信验证码</strong>等。采用 MySQL 数据库，通过 Sequelize ORM 进行数据操作。
+                本数据库设计支持摩的 App 核心功能（C 端为 mody-app 一体化，服务端 + 管理端）：<strong>用户注册登录</strong>、<strong>司机注册审核</strong>、<strong>实时定位上报</strong>、<strong>附近司机查询</strong>、<strong>短信验证码</strong>等。采用 MySQL 数据库，通过 Sequelize ORM 进行数据操作。
             </p>
             <ul>
                 <li><strong>admins</strong> - 管理员表，存储管理端账号、角色权限，用于司机审核与运营后台</li>
@@ -840,7 +840,7 @@ const VerificationCode = sequelize.define('VerificationCode', {
         </div>
 
         <footer>
-            基于《摩的 App 需求文档》设计 · MySQL + Sequelize ORM · 支持四端核心功能
+            基于《摩的 App 需求文档》设计 · MySQL + Sequelize ORM · 支持 mody-app + server + admin-web
         </footer>
     </div>
 

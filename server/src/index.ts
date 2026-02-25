@@ -1,23 +1,28 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import corsMiddleware from './middleware/cors';
+import requestLogger from './middleware/requestLogger';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import sequelize from './config/database';
 import './models'; // 加载全部模型，保证 sync 时建表完整
 import { Admin } from './models';
 import bcrypt from 'bcryptjs';
+import os from 'os';
 
 // 加载环境变量
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // 中间件
 app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 请求日志：每次 API 请求会在终端打印，并可在浏览器访问 /api/debug/requests 查看
+app.use('/api', requestLogger);
 
 // 路由
 app.use('/api', routes);
@@ -56,13 +61,24 @@ const connectDatabase = async () => {
   }
 };
 
-// 启动服务器
+// 启动服务器（监听所有网卡，方便手机/局域网访问）
 const startServer = async () => {
   await connectDatabase();
-  
-  app.listen(PORT, () => {
+
+  const host = '0.0.0.0';
+  app.listen(PORT, host, () => {
     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-    console.log(`📝 API 文档: http://localhost:${PORT}/api/health`);
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets || {})) {
+      for (const net of nets[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          console.log(`📱 手机/局域网访问: http://${net.address}:${PORT}/api`);
+          break;
+        }
+      }
+    }
+    console.log(`📝 健康检查: http://localhost:${PORT}/api/health`);
+    console.log(`📋 请求日志(调试): http://localhost:${PORT}/api/debug/requests`);
   });
 };
 

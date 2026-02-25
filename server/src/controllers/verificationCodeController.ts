@@ -7,7 +7,7 @@ export class VerificationCodeController {
     try {
       const { phone, type } = req.body;
       if (!phone || !type) return sendError(res, 'phone 和 type 不能为空', 400);
-      if (!['register', 'login'].includes(type)) return sendError(res, 'type 必须为 register 或 login', 400);
+      if (!['register', 'login', 'reset_password'].includes(type)) return sendError(res, 'type 必须为 register、login 或 reset_password', 400);
 
       const result = await verificationCodeService.sendCode(phone, type);
       sendSuccess(res, result, '验证码已发送');

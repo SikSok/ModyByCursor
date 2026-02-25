@@ -94,8 +94,13 @@ export class DriverController {
 
       const driver = await driverService.updateAvailability(driverId, is_available);
       sendSuccess(res, driver, '接客状态更新成功');
-    } catch (error: any) {
-      next(error);
+    } catch (e: any) {
+      if (e?.code === 'DRIVER_NOT_VERIFIED') {
+        return sendError(res, e.message || '请先完成身份认证', 403, {
+          code: 'DRIVER_NOT_VERIFIED',
+        });
+      }
+      next(e);
     }
   }
 
@@ -117,6 +122,34 @@ export class DriverController {
       });
       sendSuccess(res, location, '定位上报成功');
     } catch (e) {
+      next(e);
+    }
+  }
+
+  /** 提交身份认证材料（身份证正反面、车牌号、可选车牌照片） */
+  async submitVerification(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const driverId = req.user?.id;
+      if (!driverId) {
+        return sendError(res, '未认证', 401);
+      }
+
+      const { id_card_front, id_card_back, license_plate, license_plate_photo } = req.body;
+      if (!id_card_front || !id_card_back || !license_plate) {
+        return sendError(res, '身份证正反面与车牌号为必填项', 400);
+      }
+
+      const driver = await driverService.submitVerification(driverId, {
+        id_card_front,
+        id_card_back,
+        license_plate: String(license_plate).trim(),
+        license_plate_photo: license_plate_photo || undefined,
+      });
+      sendSuccess(res, driver, '认证材料已提交');
+    } catch (e: any) {
+      if (e?.message && /必填|不存在/.test(e.message)) {
+        return sendError(res, e.message, 400);
+      }
       next(e);
     }
   }

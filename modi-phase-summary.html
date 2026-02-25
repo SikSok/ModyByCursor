@@ -129,11 +129,11 @@
                 <tbody>
                     <tr>
                         <td><span class="phase-label phase-01">环境</span></td>
-                        <td>四端项目骨架就绪；用户端、司机端可在本机通过数据线同时调试（Metro 双端口 8081/8082）。</td>
+                        <td>C 端已整合为 <strong>mody-app</strong>（乘客/司机身份切换）；原 user-app、driver-app 目录暂保留，可同时调试时用 Metro 8081/8082。</td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-02">Android</span></td>
-                        <td>user-app / driver-app 均完成 Gradle、Babel、Metro 配置；统一 JDK 使用本机 Android Studio JBR，避免联网下载；Gradle 8.6 与 RN 插件兼容。</td>
+                        <td>mody-app 为主开发目标；原 user-app / driver-app 均已有 Gradle、Babel、Metro 配置可参考；统一 JDK 使用本机 Android Studio JBR，Gradle 8.6 与 RN 插件兼容。</td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-03">提交规范</span></td>
@@ -164,16 +164,16 @@
                     <tr>
                         <td>P0</td>
                         <td>服务端接口与数据库</td>
-                        <td>按 modi-api-design / modi-database-design 打通注册、登录、定位上报、附近司机等接口；确保 user-app / driver-app 能连真实后端。</td>
+                        <td>按 modi-api-design / modi-database-design 打通注册、登录、定位上报、附近司机等接口；确保 mody-app 能连真实后端。</td>
                     </tr>
                     <tr>
                         <td>P0</td>
-                        <td>司机端核心流程</td>
-                        <td>定位权限、定时上报、接客状态切换与接口对接；与进度表第三阶段任务对齐。</td>
+                        <td>mody-app 司机身份流程</td>
+                        <td>身份选择与切换、定位权限、定时上报、接客状态切换与接口对接；与进度表第三阶段任务对齐。</td>
                     </tr>
                     <tr>
                         <td>P1</td>
-                        <td>用户端核心流程</td>
+                        <td>mody-app 乘客身份流程</td>
                         <td>地图、附近司机展示、选司机等；与进度表第四阶段任务对齐。</td>
                     </tr>
                     <tr>
@@ -184,7 +184,7 @@
                     <tr>
                         <td>P2</td>
                         <td>联调与上架准备</td>
-                        <td>四端联调、iOS 配置与打包、提审准备；与进度表第六阶段任务对齐。</td>
+                        <td>mody-app + server + admin-web 联调、iOS 配置与打包、提审准备；与进度表第六阶段任务对齐。</td>
                     </tr>
                     <tr>
                         <td>P2</td>
@@ -196,13 +196,14 @@
 
             <div class="highlight">
                 <strong>换机开发提醒</strong><br>
-                新电脑拉取后：各目录执行 <code>npm install</code>；为 user-app / driver-app 的 <code>android</code> 目录补全 <code>local.properties</code>（<code>sdk.dir=本机Android_SDK路径</code>）。详见根目录 <code>README.md</code>。
+                新电脑拉取后：在 mody-app、server、admin-web 执行 <code>npm install</code>；为 mody-app 的 <code>android</code> 目录补全 <code>local.properties</code>（<code>sdk.dir=本机Android_SDK路径</code>）。原 user-app/driver-app 若需运行也需各自安装依赖与 local.properties。详见根目录 <code>README.md</code> 与 <code>mody-app-prompt.md</code>。
             </div>
         </div>
 
         <div class="task-section">
             <h3>📎 相关文档</h3>
             <ul>
+                <li><code>mody-app-prompt.md</code> — mody-app 整合与执行说明（AI 友好）</li>
                 <li><code>modi-progress.html</code> — 90 天开发进度表</li>
                 <li><code>modi-api-design.html</code> — 接口设计</li>
                 <li><code>modi-tech-stack.html</code> — 技术栈与版本</li>

@@ -52,8 +52,8 @@
   <div class="page">
     <header>
       <div class="doc-badge">RESTful API</div>
-      <h1>摩的 App · 四端接口清单（已按“三端 App + 管理端 Web”调整）</h1>
-      <p class="subtitle">Base URL：<span class="mono">/api</span> · 统一返回：<span class="mono">{ success, message, data }</span></p>
+      <h1>摩的 App · 接口清单（mody-app + 管理端 Web）</h1>
+      <p class="subtitle">Base URL：<span class="mono">/api</span> · 统一返回：<span class="mono">{ success, message, data }</span> · C 端调用方为 mody-app（乘客/司机身份）</p>
     </header>
 
     <h2 class="section-title">1) 健康检查</h2>
@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <h2 class="section-title">3) 用户端（user-app）</h2>
+    <h2 class="section-title">3) mody-app 乘客身份（用户接口）</h2>
     <div class="card">
       <div class="card-hd"><div class="card-title">认证</div><div class="muted">密码 + 验证码校验（注册）</div></div>
       <div style="overflow-x:auto;">
@@ -120,7 +120,7 @@
       </div>
     </div>
 
-    <h2 class="section-title">4) 司机端（driver-app）</h2>
+    <h2 class="section-title">4) mody-app 司机身份（司机接口）</h2>
     <div class="card">
       <div class="card-hd"><div class="card-title">认证与资料</div><div class="muted">注册需验证码；登录需审核通过（status=approved）</div></div>
       <div style="overflow-x:auto;">
@@ -179,7 +179,7 @@
     <div class="note">
       <div class="card-title">落地说明（与你当前代码一致）</div>
       <ul>
-        <li><strong>三端 App</strong>：user-app、driver-app、server；<strong>管理端</strong>改为 admin-web（网页）。</li>
+        <li><strong>C 端</strong>：mody-app（乘客/司机身份切换，调用用户与司机接口）；<strong>服务端</strong> server；<strong>管理端</strong> admin-web。原 user-app、driver-app 目录暂保留。</li>
         <li>当前 server 已实现：验证码发送、用户注册验证码校验、司机注册验证码校验、附近司机查询（基于最后一次定位）、审核接口。</li>
         <li>后续可扩展：验证码登录、司机资料上传图片（身份证/行驶证）、操作日志表等。</li>
       </ul>

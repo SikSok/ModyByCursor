@@ -13,6 +13,7 @@ router.get('/profile', authenticateToken, driverController.getProfile.bind(drive
 router.put('/profile', authenticateToken, driverController.updateProfile.bind(driverController));
 router.patch('/availability', authenticateToken, driverController.updateAvailability.bind(driverController));
 router.post('/location', authenticateToken, driverController.reportLocation.bind(driverController));
+router.post('/verification', authenticateToken, driverController.submitVerification.bind(driverController));
 
 export default router;
 

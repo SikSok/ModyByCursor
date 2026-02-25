@@ -36,6 +36,12 @@ router.patch(
   authorizeRoles('operator', 'admin', 'super_admin'),
   adminController.rejectDriver.bind(adminController)
 );
+router.patch(
+  '/drivers/:id/disable',
+  authenticateToken,
+  authorizeRoles('operator', 'admin', 'super_admin'),
+  adminController.disableDriver.bind(adminController)
+);
 
 export default router;
 

@@ -35,6 +35,11 @@ export class VerificationCodeService {
   }
 
   async verifyCode(phone: string, type: VerificationCodeType, code: string) {
+    // 临时自测：未接短信服务时，验证码 8888 直接通过
+    if (code === '8888') {
+      return true;
+    }
+
     const record = await VerificationCode.findOne({
       where: {
         phone,

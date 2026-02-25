@@ -110,6 +110,18 @@ export class AdminController {
     }
   }
 
+  /** 禁用司机：设为不可接单，再次认证需人工审核 */
+  async disableDriver(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) return sendError(res, '无效的司机ID', 400);
+      const driver = await driverService.disableDriver(id);
+      sendSuccess(res, driver, '已禁用');
+    } catch (e) {
+      next(e);
+    }
+  }
+
   /** 管理端：用户列表查询（分页、手机号、状态筛选） */
   async getUserList(req: Request, res: Response, next: NextFunction) {
     try {

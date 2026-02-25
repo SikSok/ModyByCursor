@@ -142,6 +142,7 @@
 <body>
     <div class="container">
         <h1>🚗 《摩迪》App · 90天开发攻坚进度表</h1>
+        <p style="text-align:center;color:#7f8c8d;margin-bottom:20px;">C 端已整合为 <strong>mody-app</strong>（乘客/司机身份切换）。进度表中「司机端」「用户端」阶段对应 mody-app 内司机身份/乘客身份功能；原 user-app、driver-app 目录暂保留、后续再删。</p>
         
         <!-- 整体进度看板 -->
         <div class="progress-board">
@@ -161,7 +162,7 @@
                         <td><span class="phase-label phase-01">01</span> 架构梳理</td>
                         <td><input type="text" class="status-input" data-key="phase1-status" value="🚀"></td>
                         <td><input type="text" class="progress-input" data-key="phase1-progress" value="0%"></td>
-                        <td>四端项目骨架初始化</td>
+                        <td>mody-app + server + admin-web 骨架；原双端暂保留</td>
                         <td><input type="checkbox" class="task-checkbox" data-key="phase1-complete"></td>
                     </tr>
                     <tr>
@@ -172,17 +173,17 @@
                         <td><input type="checkbox" class="task-checkbox" data-key="phase2-complete"></td>
                     </tr>
                     <tr>
-                        <td><span class="phase-label phase-03">03</span> 司机端开发</td>
+                        <td><span class="phase-label phase-03">03</span> mody-app 司机身份</td>
                         <td><input type="text" class="status-input" data-key="phase3-status" value="⏳"></td>
                         <td><input type="text" class="progress-input" data-key="phase3-progress" value="0%"></td>
-                        <td>RN定位与状态同步</td>
+                        <td>RN 定位与状态同步（原司机端能力）</td>
                         <td><input type="checkbox" class="task-checkbox" data-key="phase3-complete"></td>
                     </tr>
                     <tr>
-                        <td><span class="phase-label phase-04">04</span> 用户端开发</td>
+                        <td><span class="phase-label phase-04">04</span> mody-app 乘客身份</td>
                         <td><input type="text" class="status-input" data-key="phase4-status" value="⏳"></td>
                         <td><input type="text" class="progress-input" data-key="phase4-progress" value="0%"></td>
-                        <td>地图与司机选择交互</td>
+                        <td>地图与司机选择交互（原用户端能力）</td>
                         <td><input type="checkbox" class="task-checkbox" data-key="phase4-complete"></td>
                     </tr>
                     <tr>
@@ -222,7 +223,7 @@
                 <tbody>
                     <tr>
                         <td>001</td>
-                        <td>梳理四端核心功能清单</td>
+                        <td>梳理三端核心功能清单（mody-app + server + admin-web）</td>
                         <td>1.5h</td>
                         <td><input type="text" class="status-input" data-key="task1-1-status" value="未开始"></td>
                         <td><input type="text" class="remark-input" data-key="task1-1-remark" placeholder="填写备注..."></td>
@@ -238,7 +239,7 @@
                     </tr>
                     <tr>
                         <td>003</td>
-                        <td>梳理四端接口清单 (RESTful)</td>
+                        <td>梳理三端接口清单 (RESTful，C 端为 mody-app)</td>
                         <td>2h</td>
                         <td><input type="text" class="status-input" data-key="task1-3-status" value="已完成"></td>
                         <td><input type="text" class="remark-input" data-key="task1-3-remark" placeholder="填写备注..." value="见 modi-api-design.html"></td>

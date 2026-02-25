@@ -130,18 +130,19 @@
         <header>
             <div class="doc-badge">技术栈与依赖</div>
             <h1>摩的 App · 技术栈版本与依赖</h1>
-            <p class="subtitle">三端 App（user / driver）+ 服务端 + 管理端 Web · 对应 Day4 规划</p>
+            <p class="subtitle">mody-app（C 端一体化）+ 服务端 + 管理端 Web · 原 user-app/driver-app 暂保留</p>
         </header>
 
         <section class="overview">
             <h2>说明</h2>
             <p style="margin-bottom: 12px;">
-                以下版本与依赖与当前仓库 <strong>package.json</strong> 一致，用于统一开发/构建环境与后续升级参考。管理端已改为 <strong>admin-web</strong>（React + Ant Design Pro 风格），不再使用 admin-app。
+                以下版本与依赖与当前仓库 <strong>package.json</strong> 一致，用于统一开发/构建环境与后续升级参考。C 端已整合为 <strong>mody-app</strong>（乘客/司机身份切换）；<strong>user-app、driver-app</strong> 目录暂保留、后续再删。
             </p>
             <ul>
                 <li><strong>server</strong> - Express + TypeScript，MySQL + Sequelize，JWT / bcrypt</li>
                 <li><strong>admin-web</strong> - React 18 + Vite 5 + TypeScript，Ant Design 5 + Pro Components</li>
-                <li><strong>driver-app / user-app</strong> - React Native 0.74 + React 18，TypeScript</li>
+                <li><strong>mody-app</strong> - React Native 0.74 + React 18，TypeScript（C 端主应用）</li>
+                <li><strong>user-app / driver-app</strong> - 同上 RN 技术栈（暂保留，仅作参考）</li>
             </ul>
         </section>
 
@@ -204,13 +205,38 @@
             </div>
         </div>
 
-        <h2 class="section-title">司机端 (driver-app)</h2>
+        <h2 class="section-title">C 端 (mody-app)</h2>
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-icon driver">📱</div>
+                <div>
+                    <div class="table-title">运行与构建</div>
+                    <div class="table-desc">React Native · 乘客/司机身份切换 · npm run start / ios / android · 默认端口 8081</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>依赖</th><th>版本</th><th>说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="field-name">react</span></td><td><span class="field-type">18.2.0</span></td><td>UI 库</td></tr>
+                        <tr><td><span class="field-name">react-native</span></td><td><span class="field-type">0.74.0</span></td><td>RN 运行时</td></tr>
+                        <tr><td><span class="field-name">typescript</span></td><td><span class="field-type">^5.3.3</span></td><td>dev</td></tr>
+                        <tr><td><span class="field-name">@babel/core</span></td><td><span class="field-type">^7.23.7</span></td><td>dev</td></tr>
+                        <tr><td><span class="field-name">metro-react-native-babel-preset</span></td><td><span class="field-type">^0.77.0</span></td><td>dev 打包</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2 class="section-title">原司机端 (driver-app) · 暂保留</h2>
         <div class="table-card">
             <div class="table-header">
                 <div class="table-icon driver">🛵</div>
                 <div>
                     <div class="table-title">运行与构建</div>
-                    <div class="table-desc">React Native · npm run start / ios / android</div>
+                    <div class="table-desc">React Native · 端口 8082 · 后续删除</div>
                 </div>
             </div>
             <div class="table-wrapper">
@@ -229,13 +255,13 @@
             </div>
         </div>
 
-        <h2 class="section-title">用户端 (user-app)</h2>
+        <h2 class="section-title">原用户端 (user-app) · 暂保留</h2>
         <div class="table-card">
             <div class="table-header">
                 <div class="table-icon user">👤</div>
                 <div>
                     <div class="table-title">运行与构建</div>
-                    <div class="table-desc">与 driver-app 技术栈一致</div>
+                    <div class="table-desc">端口 8081 · 与 mody-app 技术栈一致 · 后续删除</div>
                 </div>
             </div>
             <div class="table-wrapper">
@@ -254,7 +280,7 @@
             </div>
         </div>
 
-        <footer>基于 modi-progress Day4「确定技术栈版本与依赖」整理 · 与 modi-database-design 风格一致</footer>
+        <footer>基于 modi-progress Day4「确定技术栈版本与依赖」整理 · C 端主应用为 mody-app，原 user-app/driver-app 暂保留</footer>
     </div>
 </body>
 </html>
