@@ -38,10 +38,12 @@ const connectDatabase = async () => {
     const dialect = (sequelize.getDialect && sequelize.getDialect()) || 'database';
     console.log(`✅ 数据库连接成功 (${dialect})`);
     
-    // 同步数据库模型（开发环境）
+    // 同步数据库模型：开发环境始终同步；生产环境也同步（alter: true 只增列/改列，不删表不删数据）
+    // 这样部署后重启服务即可自动补齐新增字段，无需在 MySQL 里手跑 ALTER TABLE
+    await sequelize.sync({ alter: true });
+    console.log('✅ 数据库模型同步完成');
+    
     if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ 数据库模型同步完成');
       // 无管理员时创建默认管理员，便于本地登录
       const adminCount = await Admin.count();
       if (adminCount === 0) {
