@@ -13,6 +13,7 @@
 | **主开发目标** | **mody-app**（C 端一体化，乘客/司机身份选择与切换），配合 **server** + **admin-web**。 |
 | **原双端** | **user-app**、**driver-app** 暂保留不删，仅作参考；新功能在 mody-app 实现。 |
 | **Server 部署** | 仅采用 **方案 A**（半自动一键）。国内 ECS 拉 GitHub 易超时，已同时配置 **Gitee** 镜像，ECS 从 Gitee 拉代码部署（2026-02-25）。详见 `docs/deploy-server.md`。 |
+| **官网部署** | 与 server 同仓库、同 Gitee；ECS 已有 Nginx，一次初始化后执行 `mody-website/scripts/deploy.sh` 即可更新。详见 `mody-website/docs/deploy-quick.md`。 |
 | **真机/云端 API** | 真机连本机 server：`npm run dev-lan` 写局域网 IP 到 `apiBaseUrl.js`。连云端：`npm run pre`（admin-web / mody-app 均支持）。 |
 | **C 端请求** | 使用 **react-native-blob-util** 发请求，取用需 `default ?? require(...)`，否则易报 `fetch is not a function`。 |
 
@@ -25,7 +26,7 @@
 - **admin-web**：管理端 Web（Vite）。
 - **user-app / driver-app**：暂保留，参考用；driver-app 若跑需端口 8082。
 
-文档：<code>README.md</code>、<code>z-agent-context.md</code>、<code>modi-progress.html</code>、<code>modi-api-design.html</code>、<code>modi-database-design.html</code>、<code>modi-requirements.html</code>、<code>modi-tech-stack.html</code>、<code>modi-phase-summary.html</code>、<code>docs/deploy-server.md</code>。
+文档：<code>README.md</code>、<code>z-agent-context.md</code>、<code>modi-progress.html</code>、<code>modi-api-design.html</code>、<code>modi-database-design.html</code>、<code>modi-requirements.html</code>、<code>modi-tech-stack.html</code>、<code>modi-phase-summary.html</code>、<code>docs/deploy-server.md</code>、<code>mody-website/docs/deploy-quick.md</code>。
 
 ---
 
@@ -59,6 +60,8 @@
 | C 端请求封装 | `mody-app/src/services/api.ts`（BlobUtil，勿改 default 取用） |
 | Server 部署脚本 | `server/scripts/deploy.sh`（方案 A 一键部署） |
 | Server 部署说明 | `docs/deploy-server.md`（方案 A/B/C、Gitee、国内 ECS） |
+| 官网部署脚本 | `mody-website/scripts/deploy.sh`（一键部署，Gitee + Nginx） |
+| 官网部署说明 | `mody-website/docs/deploy-quick.md` |
 | 服务端请求日志 | `server/src/middleware/requestLogger.ts` |
 | JDK/本地路径 | 各 RN 端 `android/gradle.properties`、`android/local.properties`（后者不提交） |
 
