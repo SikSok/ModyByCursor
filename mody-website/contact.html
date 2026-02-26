@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="联系我们 - 摩的 Mody 官方微信，问题反馈与商务合作">
+    <title>联系我们 ｜ 摩的 Mody</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #fafbfc;
+            --color-surface: #ffffff;
+            --color-primary: #0d9488;
+            --color-primary-dark: #0f766e;
+            --color-text: #1e293b;
+            --color-text-muted: #64748b;
+            --color-border: #e2e8f0;
+            --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+            --transition: 0.25s ease;
+            --container-max: 1200px;
+            --pad-x: clamp(16px, 4vw, 32px);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            font-size: clamp(0.9375rem, 1.8vw, 1rem);
+        }
+        img { max-width: 100%; height: auto; display: block; }
+
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .nav-inner {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: clamp(12px, 2vw, 16px) var(--pad-x);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 1.5vw, 10px);
+            text-decoration: none;
+            color: var(--color-text);
+            font-weight: 700;
+            font-size: clamp(1rem, 2.2vw, 1.25rem);
+        }
+        .nav-logo img { height: clamp(28px, 5vw, 36px); width: auto; }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: clamp(16px, 3vw, 32px);
+        }
+        .nav-links a {
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: clamp(0.875rem, 1.8vw, 1rem);
+            transition: color var(--transition);
+        }
+        .nav-links a:hover { color: var(--color-primary); }
+
+        .page {
+            padding: clamp(100px, 16vw, 140px) var(--pad-x) clamp(48px, 10vw, 80px);
+            max-width: min(640px, 92vw);
+            margin: 0 auto;
+        }
+        .page h1 {
+            font-size: clamp(1.5rem, 3.5vw, 2rem);
+            font-weight: 700;
+            margin-bottom: clamp(16px, 3vw, 24px);
+            color: var(--color-text);
+        }
+        .page-intro {
+            font-size: clamp(0.9375rem, 1.8vw, 1.0625rem);
+            color: var(--color-text);
+            margin-bottom: clamp(20px, 3vw, 28px);
+        }
+        .page-intro p { margin-bottom: 1em; }
+        .page-intro p:last-child { margin-bottom: 0; }
+
+        .contact-card {
+            margin-top: clamp(28px, 4vw, 40px);
+            padding: clamp(24px, 4vw, 32px);
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+        .contact-card h2 {
+            font-size: clamp(1rem, 2vw, 1.125rem);
+            font-weight: 600;
+            margin-bottom: clamp(12px, 2vw, 16px);
+            color: var(--color-text);
+        }
+        .contact-qr {
+            width: clamp(200px, 40vw, 260px);
+            height: clamp(200px, 40vw, 260px);
+            margin: 0 auto clamp(12px, 2vw, 16px);
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+        }
+        .contact-qr img { width: 100%; height: 100%; object-fit: contain; }
+        .contact-id {
+            font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+            color: var(--color-text-muted);
+        }
+        .contact-id .copy-btn {
+            color: var(--color-primary);
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            background: none;
+            font: inherit;
+            padding: 0;
+        }
+        .contact-id .copy-btn:hover { text-decoration: underline; }
+
+        .footer {
+            padding: clamp(24px, 4vw, 48px) var(--pad-x) clamp(16px, 2vw, 24px);
+            background: var(--color-text);
+            color: rgba(255,255,255,0.8);
+            font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+            margin-top: clamp(40px, 8vw, 80px);
+        }
+        .footer-inner { max-width: var(--container-max); margin: 0 auto; text-align: center; }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(12px, 2vw, 24px);
+            margin-bottom: clamp(12px, 2vw, 24px);
+        }
+        .footer-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+        }
+        .footer-links a:hover { text-decoration: underline; }
+        .footer-copy { color: rgba(255,255,255,0.6); }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header class="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <img src="assets/ic_launcher.png" alt="摩的">
+                <span>摩的 Mody</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html#product">产品介绍</a>
+                <a href="index.html#download">软件下载</a>
+                <a href="promo.html">推广</a>
+                <a href="contact.html">联系</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page">
+        <h1>联系我们</h1>
+        <div class="page-intro">
+            <p>Hi，欢迎你直接扫描下方二维码加我微信呀！</p>
+            <p>如果你对摩的有任何问题或建议，都可以直接询问我～</p>
+            <p>所有摩的新功能、内测活动、用户福利或产品动态，我也会在朋友圈分享哦 😊</p>
+            <p>摩的成长离不开你的支持，我们也期待和你有更多的交流，快扫码下方二维码，让我们相遇吧～</p>
+        </div>
+
+        <div class="contact-card">
+            <h2>微信</h2>
+            <div class="contact-qr">
+                <img src="assets/wechat-qr.png" alt="联系微信二维码" />
+            </div>
+            <p class="contact-id">扫码添加微信</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-links">
+                <a href="index.html#product">产品介绍</a>
+                <a href="index.html#download">软件下载</a>
+                <a href="promo.html">推广</a>
+                <a href="contact.html">联系</a>
+                <a href="#">关于我们</a>
+                <a href="#">隐私政策</a>
+                <a href="#">服务条款</a>
+            </div>
+            <p class="footer-copy">Copyright © 2025 摩的 Mody. 保留所有权利.</p>
+        </div>
+    </footer>
+</body>
+</html>
