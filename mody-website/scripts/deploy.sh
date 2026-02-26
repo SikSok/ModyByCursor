@@ -29,10 +29,17 @@ git reset --hard "$REMOTE/$BRANCH" --quiet
 
 # 同步到 Nginx 站点目录（排除 node_modules）
 sudo mkdir -p "$WEB_ROOT"
-sudo rsync -av --delete \
-  --exclude=node_modules \
-  --exclude=.git \
-  "$WEBSITE_DIR/" "$WEB_ROOT/"
+if command -v rsync &>/dev/null; then
+  sudo rsync -av --delete \
+    --exclude=node_modules \
+    --exclude=.git \
+    "$WEBSITE_DIR/" "$WEB_ROOT/"
+else
+  echo "未检测到 rsync，使用 cp 同步（可安装 rsync 以更精确同步）"
+  sudo rm -rf "$WEB_ROOT"/*
+  sudo cp -a "$WEBSITE_DIR"/. "$WEB_ROOT/"
+  sudo rm -rf "$WEB_ROOT/node_modules" "$WEB_ROOT/.git"
+fi
 sudo chown -R nginx:nginx "$WEB_ROOT"
 
 # 重载 Nginx（配置未改则 reload 即可）

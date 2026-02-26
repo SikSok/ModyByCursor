@@ -56,7 +56,8 @@ server {
 ```bash
 # 在 ECS 上（仓库已在 /opt/mody）
 sudo cp /opt/mody/mody-website/docs/nginx-mody-website.conf /etc/nginx/conf.d/mody-website.conf
-# 若 default 占 80 端口，可先备份：sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak
+# 若 default 占 80 端口，可先备份并禁用，避免 conflicting server name "_"
+sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
@@ -91,7 +92,9 @@ ssh root@你的ECS公网IP
 cd /opt/mody && mody-website/scripts/deploy.sh
 ```
 
-脚本会：从 **Gitee**（若已配置）或 origin 拉取最新代码 → 将 `mody-website/` 同步到 `/var/www/mody-website`（排除 node_modules）→ 修正权限 → 重载 Nginx。
+脚本会：从 **Gitee**（若已配置）或 origin 拉取最新代码 → 将 `mody-website/` 同步到 `/var/www/mody-website`（排除 node_modules，有 rsync 用 rsync否则用 cp）→ 修正权限 → 重载 Nginx。
+
+**若提示 `rsync: command not found`**：脚本已支持无 rsync 时用 `cp` 同步；也可安装 rsync：`sudo yum install -y rsync`（CentOS）或 `sudo apt install -y rsync`（Ubuntu）。
 
 ---
 
@@ -120,7 +123,21 @@ ssh root@IP "cd /opt/mody && DEPLOY_WEB_ROOT=/home/www/mody mody-website/scripts
 
 ---
 
-## 五、文档与脚本位置
+## 五、常见问题
+
+**Nginx 报 `conflicting server name "_" on 0.0.0.0:80`**  
+说明有另一个站点配置也在监听 80 且用了 `server_name _`。只保留官网站点时，可禁用默认站点：
+
+```bash
+sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+若 80 端口还要给别的站用，请把其中一个配置的 `server_name` 改成具体域名或不同端口。
+
+---
+
+## 六、文档与脚本位置
 
 | 说明           | 位置 |
 |----------------|------|
