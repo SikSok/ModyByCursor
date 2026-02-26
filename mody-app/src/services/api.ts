@@ -3,6 +3,25 @@ const API_BASE_URL = require('../config/apiBaseUrl').url;
 /** 请求超时时间（毫秒） */
 const REQUEST_TIMEOUT_MS = 5000;
 
+/** 网络异常时的统一提示（无 status 或无法连接时使用） */
+const NETWORK_ERROR_MSG = '网络异常，请检查网络连接后重试';
+
+/** 判断是否为「连接失败」类错误（原生层或系统返回的英文/技术文案） */
+function isConnectionFailureMessage(msg: string): boolean {
+  if (!msg || typeof msg !== 'string') return false;
+  const s = msg.toLowerCase();
+  return (
+    /failed to connect|connection refused|network request failed|network error|unable to connect|could not connect|connection reset|econnrefused|enotfound|etimedout|econnreset|socket hang up|cleartext.*not permitted/i.test(s) ||
+    /^failed to connect to\s/i.test(s)
+  );
+}
+
+/** 服务端错误文案：status 无效（无网/未返回）时返回网络异常，否则返回带状态码的文案 */
+function serverErrorMessage(status: number | undefined | null, kind: '服务返回错误' | '服务端异常' = '服务返回错误'): string {
+  if (status == null || typeof status !== 'number' || Number.isNaN(status)) return NETWORK_ERROR_MSG;
+  return `${kind}(${status})，请稍后重试`;
+}
+
 /** 使用 react-native-blob-util 发请求（原生层实现，可规避 Android 上 fetch/XHR 收不到 4xx 响应的问题） */
 let blobUtilFetch: ((method: string, url: string, headers: Record<string, string>, body: string) => Promise<any>) | null = null;
 try {
@@ -54,12 +73,12 @@ function requestWithXHR<T>(
           message: '响应不是合法 JSON',
           body: responseText.slice(0, 500),
         });
-        reject(new Error(`服务端异常(${status})，请稍后重试`));
+        reject(new Error(serverErrorMessage(status, '服务端异常')));
         return;
       }
 
       if (status >= 400 || json.success === false) {
-        const message = (json && 'message' in json ? json.message : undefined) || `服务返回错误(${status})，请稍后重试`;
+        const message = (json && 'message' in json ? json.message : undefined) || serverErrorMessage(status);
         logApiError({
           method,
           url,
@@ -86,7 +105,7 @@ function requestWithXHR<T>(
     xhr.onerror = () => {
       clearTimeout(timer);
       logApiError({ method, url, params, message: '网络请求失败', err: 'onerror' });
-      reject(new Error('网络异常，请检查手机网络；开发时请确认电脑已启动后端服务'));
+      reject(new Error(NETWORK_ERROR_MSG));
     };
 
     xhr.onabort = () => {
@@ -106,7 +125,7 @@ function requestWithXHR<T>(
     } catch (err) {
       clearTimeout(timer);
       logApiError({ method, url, params, err });
-      reject(new Error('网络异常，请检查手机网络'));
+      reject(new Error(NETWORK_ERROR_MSG));
     }
   });
 }
@@ -151,9 +170,13 @@ export function getUserFacingMessage(error: unknown, fallback: string): string {
       ? (error as any).message
       : String(error);
   const trimmed = msg?.trim();
-  if (trimmed && trimmed !== '请求失败') return trimmed;
-  if (/网络|超时|连接|无法/.test(trimmed || '')) return trimmed || fallback;
-  return fallback;
+  if (!trimmed || trimmed === '请求失败') return fallback;
+  // 避免把 "服务返回错误(undefined)" 等暴露给用户，统一为网络异常
+  if (/服务返回错误\(undefined\)|服务端异常\(undefined\)/.test(trimmed)) return NETWORK_ERROR_MSG;
+  // 原生层/系统返回的英文连接错误（如 Failed to connect to /47.110.243.97:3000）统一为友好提示
+  if (isConnectionFailureMessage(trimmed)) return NETWORK_ERROR_MSG;
+  if (/网络|超时|连接|无法/.test(trimmed)) return trimmed;
+  return trimmed;
 }
 
 /**
@@ -226,11 +249,11 @@ function requestWithBlobUtil<T>(
               message: '响应不是合法 JSON',
               body: bodyText.slice(0, 500),
             });
-            reject(new Error(`服务端异常(${status})，请稍后重试`));
+            reject(new Error(serverErrorMessage(status, '服务端异常')));
             return;
           }
           if (status >= 400 || (json && json.success === false)) {
-            const message = (json && 'message' in json ? json.message : undefined) || `服务返回错误(${status})，请稍后重试`;
+            const message = (json && 'message' in json ? json.message : undefined) || serverErrorMessage(status);
             logApiError({ method, url, params, status, message });
             const err = new Error(message) as Error & { code?: string };
             if (json && typeof (json as any).code === 'string') err.code = (json as any).code;
@@ -248,13 +271,14 @@ function requestWithBlobUtil<T>(
             message: err?.message || '网络请求失败',
             err,
           });
-          reject(
-            new Error(
-              err?.message || statusCode != null
-                ? `服务返回错误(${statusCode})，请稍后重试`
-                : '网络异常，请检查手机网络；开发时请确认电脑已启动后端服务'
-            )
-          );
+          const rawMsg = err?.message;
+          const friendlyMessage =
+            isConnectionFailureMessage(rawMsg) || (rawMsg && isConnectionFailureMessage(String(rawMsg)))
+              ? NETWORK_ERROR_MSG
+              : rawMsg && rawMsg !== `服务返回错误(${statusCode})，请稍后重试`
+                ? rawMsg
+                : serverErrorMessage(statusCode ?? undefined);
+          reject(new Error(friendlyMessage));
         });
     }),
     new Promise<ApiResponse<T>>((_, reject) =>
@@ -293,7 +317,7 @@ async function requestWithFetch<T>(
       err,
     });
     if (isAbort) throw new Error('请求超时，请检查网络连接或稍后重试');
-    throw new Error('网络异常，请检查手机网络；开发时请确认电脑已启动后端服务');
+    throw new Error(NETWORK_ERROR_MSG);
   }
   clearTimeout(timeoutId);
 
@@ -325,11 +349,11 @@ async function requestWithFetch<T>(
       message: '响应不是合法 JSON',
       body: bodyText.slice(0, 500),
     });
-    throw new Error(`服务端异常(${res.status})，请稍后重试`);
+    throw new Error(serverErrorMessage(res.status, '服务端异常'));
   }
 
   if (!res.ok || (json && json.success === false)) {
-    const message = (json && 'message' in json ? json.message : undefined) || `服务返回错误(${res.status})，请稍后重试`;
+    const message = (json && 'message' in json ? json.message : undefined) || serverErrorMessage(res.status);
     logApiError({ method, url, params, status: res.status, message });
     const err = new Error(message) as Error & { code?: string };
     if (json && typeof (json as any).code === 'string') err.code = (json as any).code;

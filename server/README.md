@@ -220,3 +220,20 @@ ALIYUN_SMS_TEMPLATE_CODE=你的模板Code（如 SMS_123456789）
 2. 数据库密码、AccessKey 等敏感信息不要提交到版本控制
 3. 生产环境建议关闭数据库自动同步功能
 
+## 接口访问日志（生产排查）
+
+每次 API 请求会在控制台打印；**生产环境**下会同时写入日志文件，便于出问题时查 log 调试。
+
+- **日志文件**：`logs/access.log`（可通过环境变量 `LOG_DIR` 指定目录，默认项目根下的 `logs/`）
+- **格式**：每行一条 JSON（NDJSON），包含 `time`、`method`、`path`、`statusCode`、`durationMs`、`ip`，失败时含 `errorMessage`
+- **环境**：`NODE_ENV=production` 时自动写入文件；开发环境如需写入可设 `LOG_REQUEST_TO_FILE=1`；若需关闭文件日志可设 `LOG_REQUEST_TO_FILE=0`
+
+示例查看最近错误请求：
+
+```bash
+grep -E '"statusCode":[45][0-9]{2}' logs/access.log | tail -20
+tail -10 logs/access.log
+```
+
+调试用：浏览器访问 `GET /api/debug/requests` 可查看最近 100 条请求（内存）。
+
