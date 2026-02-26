@@ -17,6 +17,7 @@ echo "========== 部署 Mody Server =========="
 echo "仓库目录: $REPO_ROOT"
 
 # 拉取远程：国内 ECS 建议用 Gitee（DEPLOY_REMOTE=gitee），否则用 origin
+# 使用 fetch + reset --hard，强制与远程一致，避免服务器本地修改导致 pull 报错
 BRANCH="${DEPLOY_BRANCH:-main}"
 REMOTE="${DEPLOY_REMOTE:-origin}"
 # 若未指定且存在 gitee 远程，则优先用 gitee（国内 ECS 访问 GitHub 常超时）
@@ -26,7 +27,7 @@ fi
 echo "拉取远程: $REMOTE 分支: $BRANCH"
 git fetch "$REMOTE" "$BRANCH" --quiet
 git checkout "$BRANCH" --quiet
-git pull "$REMOTE" "$BRANCH" --quiet
+git reset --hard "$REMOTE/$BRANCH" --quiet
 
 cd "$SERVER_DIR"
 echo "安装依赖 (npm ci)..."
