@@ -2,7 +2,7 @@
 
 > 供新开 Agent 快速了解仓库状态、约定与已解决问题，避免重复踩坑。
 
-**最后更新：2026-02-25**
+**最后更新：2026-02-26**
 
 ---
 
@@ -25,7 +25,7 @@
 - **admin-web**：管理端 Web（Vite）。
 - **user-app / driver-app**：暂保留，参考用；driver-app 若跑需端口 8082。
 
-文档：`README.md`、`mody-app-prompt.md`、`modi-progress.html`、`modi-api-design.html`、`docs/deploy-server.md`。
+文档：<code>README.md</code>、<code>z-agent-context.md</code>、<code>modi-progress.html</code>、<code>modi-api-design.html</code>、<code>modi-database-design.html</code>、<code>modi-requirements.html</code>、<code>modi-tech-stack.html</code>、<code>modi-phase-summary.html</code>、<code>docs/deploy-server.md</code>。
 
 ---
 

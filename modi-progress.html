@@ -141,8 +141,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🚗 《摩迪》App · 90天开发攻坚进度表</h1>
-        <p style="text-align:center;color:#7f8c8d;margin-bottom:20px;">C 端已整合为 <strong>mody-app</strong>（乘客/司机身份切换）。进度表中「司机端」「用户端」阶段对应 mody-app 内司机身份/乘客身份功能；原 user-app、driver-app 目录暂保留、后续再删。</p>
+        <h1>🚗 《摩迪》App · 进度与里程碑追踪</h1>
         
         <!-- 整体进度看板 -->
         <div class="progress-board">
@@ -160,44 +159,44 @@
                 <tbody>
                     <tr>
                         <td><span class="phase-label phase-01">01</span> 架构梳理</td>
-                        <td><input type="text" class="status-input" data-key="phase1-status" value="🚀"></td>
-                        <td><input type="text" class="progress-input" data-key="phase1-progress" value="0%"></td>
-                        <td>mody-app + server + admin-web 骨架；原双端暂保留</td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="phase1-complete"></td>
+                        <td><input type="text" class="status-input" data-key="phase1-status" value="✅"></td>
+                        <td><input type="text" class="progress-input" data-key="phase1-progress" value="90%"></td>
+                        <td>mody-app + server + admin-web 骨架；C 端一体化</td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="phase1-complete" checked></td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-02">02</span> 服务端开发</td>
-                        <td><input type="text" class="status-input" data-key="phase2-status" value="⏳"></td>
-                        <td><input type="text" class="progress-input" data-key="phase2-progress" value="0%"></td>
-                        <td>Express接口全打通</td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="phase2-complete"></td>
+                        <td><input type="text" class="status-input" data-key="phase2-status" value="✅"></td>
+                        <td><input type="text" class="progress-input" data-key="phase2-progress" value="95%"></td>
+                        <td>Express 接口全打通，验证码、部署就绪</td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="phase2-complete" checked></td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-03">03</span> mody-app 司机身份</td>
-                        <td><input type="text" class="status-input" data-key="phase3-status" value="⏳"></td>
-                        <td><input type="text" class="progress-input" data-key="phase3-progress" value="0%"></td>
-                        <td>RN 定位与状态同步（原司机端能力）</td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="phase3-complete"></td>
+                        <td><input type="text" class="status-input" data-key="phase3-status" value="✅"></td>
+                        <td><input type="text" class="progress-input" data-key="phase3-progress" value="90%"></td>
+                        <td>RN 定位与状态同步（司机身份能力）</td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="phase3-complete" checked></td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-04">04</span> mody-app 乘客身份</td>
-                        <td><input type="text" class="status-input" data-key="phase4-status" value="⏳"></td>
-                        <td><input type="text" class="progress-input" data-key="phase4-progress" value="0%"></td>
-                        <td>地图与司机选择交互（原用户端能力）</td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="phase4-complete"></td>
+                        <td><input type="text" class="status-input" data-key="phase4-status" value="✅"></td>
+                        <td><input type="text" class="progress-input" data-key="phase4-progress" value="85%"></td>
+                        <td>地图与附近司机交互（乘客身份能力）</td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="phase4-complete" checked></td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-05">05</span> 管理端开发</td>
-                        <td><input type="text" class="status-input" data-key="phase5-status" value="⏳"></td>
-                        <td><input type="text" class="progress-input" data-key="phase5-progress" value="0%"></td>
-                        <td>审核与数据面板</td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="phase5-complete"></td>
+                        <td><input type="text" class="status-input" data-key="phase5-status" value="✅"></td>
+                        <td><input type="text" class="progress-input" data-key="phase5-progress" value="90%"></td>
+                        <td>admin-web：审核、用户列表、数据面板</td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="phase5-complete" checked></td>
                     </tr>
                     <tr>
                         <td><span class="phase-label phase-06">06</span> 联调与上架</td>
                         <td><input type="text" class="status-input" data-key="phase6-status" value="⏳"></td>
                         <td><input type="text" class="progress-input" data-key="phase6-progress" value="0%"></td>
-                        <td>iOS打包与提审</td>
+                        <td>全链路联调、iOS 打包与提审</td>
                         <td><input type="checkbox" class="task-checkbox" data-key="phase6-complete"></td>
                     </tr>
                 </tbody>
@@ -225,17 +224,17 @@
                         <td>001</td>
                         <td>梳理三端核心功能清单（mody-app + server + admin-web）</td>
                         <td>1.5h</td>
-                        <td><input type="text" class="status-input" data-key="task1-1-status" value="未开始"></td>
-                        <td><input type="text" class="remark-input" data-key="task1-1-remark" placeholder="填写备注..."></td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="task1-1-complete"></td>
+                        <td><input type="text" class="status-input" data-key="task1-1-status" value="已完成"></td>
+                        <td><input type="text" class="remark-input" data-key="task1-1-remark" placeholder="填写备注..." value="README + z-agent-context"></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="task1-1-complete" checked></td>
                     </tr>
                     <tr>
                         <td>002</td>
                         <td>设计数据库表结构 (用户/司机/定位)</td>
                         <td>2h</td>
-                        <td><input type="text" class="status-input" data-key="task1-2-status" value="未开始"></td>
-                        <td><input type="text" class="remark-input" data-key="task1-2-remark" placeholder="填写备注..."></td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="task1-2-complete"></td>
+                        <td><input type="text" class="status-input" data-key="task1-2-status" value="已完成"></td>
+                        <td><input type="text" class="remark-input" data-key="task1-2-remark" placeholder="填写备注..." value="Sequelize 模型 sync"></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="task1-2-complete" checked></td>
                     </tr>
                     <tr>
                         <td>003</td>
@@ -243,7 +242,7 @@
                         <td>2h</td>
                         <td><input type="text" class="status-input" data-key="task1-3-status" value="已完成"></td>
                         <td><input type="text" class="remark-input" data-key="task1-3-remark" placeholder="填写备注..." value="见 modi-api-design.html"></td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="task1-3-complete"></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="task1-3-complete" checked></td>
                     </tr>
                     <tr>
                         <td>004</td>
@@ -251,15 +250,15 @@
                         <td>1h</td>
                         <td><input type="text" class="status-input" data-key="task1-4-status" value="已完成"></td>
                         <td><input type="text" class="remark-input" data-key="task1-4-remark" placeholder="填写备注..." value="见 modi-tech-stack.html"></td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="task1-4-complete"></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="task1-4-complete" checked></td>
                     </tr>
                     <tr>
                         <td>005</td>
-                        <td>初始化四端本地项目 (Cursor生成)</td>
+                        <td>初始化三端项目 (mody-app + server + admin-web)</td>
                         <td>1.5h</td>
-                        <td><input type="text" class="status-input" data-key="task1-5-status" value="未开始"></td>
-                        <td><input type="text" class="remark-input" data-key="task1-5-remark" placeholder="阶段验收日..."></td>
-                        <td><input type="checkbox" class="task-checkbox" data-key="task1-5-complete"></td>
+                        <td><input type="text" class="status-input" data-key="task1-5-status" value="已完成"></td>
+                        <td><input type="text" class="remark-input" data-key="task1-5-remark" placeholder="阶段验收日..." value="C 端合并为 mody-app"></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="task1-5-complete" checked></td>
                     </tr>
                 </tbody>
             </table>
@@ -268,7 +267,7 @@
         <!-- 第二阶段：服务端开发 -->
         <div class="task-section">
             <h3>📝 第二阶段：服务端开发 (第6-30天)</h3>
-            <p>核心：Express接口，数据流转的心脏</p>
+            <p>核心：Express 接口，数据流转的心脏</p>
             <table class="task-table" id="phase2Table">
                 <thead>
                     <tr>
@@ -281,39 +280,39 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>006</td><td>服务端：Express+TS环境搭建</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-1-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-1-complete"></td></tr>
-                    <tr><td>007</td><td>服务端：配置CORS跨域</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-2-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-2-complete"></td></tr>
-                    <tr><td>008</td><td>服务端：Sequelize连接MySQL</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-3-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-3-complete"></td></tr>
-                    <tr><td>009</td><td>服务端：生成数据库模型文件</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-4-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-4-complete"></td></tr>
-                    <tr><td>010</td><td>服务端：集成JWT鉴权中间件</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-5-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-5-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-5-complete"></td></tr>
-                    <tr><td>011</td><td>接口：用户注册 (基础校验)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-6-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-6-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-6-complete"></td></tr>
-                    <tr><td>012</td><td>接口：用户登录 (返回Token)</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-7-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-7-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-7-complete"></td></tr>
-                    <tr><td>013</td><td>接口：司机注册 (多字段)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-8-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-8-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-8-complete"></td></tr>
-                    <tr><td>014</td><td>接口：司机登录</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-9-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-9-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-9-complete"></td></tr>
-                    <tr><td>015</td><td>接口：司机定位上报</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-10-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-10-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-10-complete"></td></tr>
-                    <tr><td>016</td><td>工具：实现Haversine距离公式</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-11-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-11-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-11-complete"></td></tr>
-                    <tr><td>017</td><td>接口：获取附近司机 (10公里内)</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-12-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-12-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-12-complete"></td></tr>
-                    <tr><td>018</td><td>接口：司机接客状态更新</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-13-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-13-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-13-complete"></td></tr>
-                    <tr><td>019</td><td>接口：管理端-待审核司机列表</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-14-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-14-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-14-complete"></td></tr>
-                    <tr><td>020</td><td>接口：管理端-司机审核操作</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-15-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-15-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-15-complete"></td></tr>
-                    <tr><td>021</td><td>接口：管理端-用户列表查询</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-16-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-16-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-16-complete"></td></tr>
-                    <tr><td>022</td><td>集成：阿里云短信服务 (发送验证码)</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-17-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-17-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-17-complete"></td></tr>
-                    <tr><td>023</td><td>优化：用户注册增加验证码校验</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-18-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-18-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-18-complete"></td></tr>
-                    <tr><td>024</td><td>接口：管理端-数据统计面板</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-19-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-19-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-19-complete"></td></tr>
-                    <tr><td>025</td><td>优化：统一接口错误处理格式</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-20-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-20-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-20-complete"></td></tr>
+                    <tr><td>006</td><td>服务端：Express+TS环境搭建</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-1-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-1-complete" checked></td></tr>
+                    <tr><td>007</td><td>服务端：配置CORS跨域</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-2-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-2-complete" checked></td></tr>
+                    <tr><td>008</td><td>服务端：Sequelize连接MySQL</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-3-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-3-complete" checked></td></tr>
+                    <tr><td>009</td><td>服务端：生成数据库模型文件</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-4-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-4-complete" checked></td></tr>
+                    <tr><td>010</td><td>服务端：集成JWT鉴权中间件</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-5-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-5-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-5-complete" checked></td></tr>
+                    <tr><td>011</td><td>接口：用户注册 (基础校验)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-6-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-6-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-6-complete" checked></td></tr>
+                    <tr><td>012</td><td>接口：用户登录 (返回Token)</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-7-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-7-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-7-complete" checked></td></tr>
+                    <tr><td>013</td><td>接口：司机注册 (多字段)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-8-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-8-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-8-complete" checked></td></tr>
+                    <tr><td>014</td><td>接口：司机登录</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-9-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-9-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-9-complete" checked></td></tr>
+                    <tr><td>015</td><td>接口：司机定位上报</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-10-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-10-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-10-complete" checked></td></tr>
+                    <tr><td>016</td><td>工具：实现Haversine距离公式</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-11-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-11-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-11-complete" checked></td></tr>
+                    <tr><td>017</td><td>接口：获取附近司机 (10公里内)</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-12-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-12-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-12-complete" checked></td></tr>
+                    <tr><td>018</td><td>接口：司机接客状态更新</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-13-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-13-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-13-complete" checked></td></tr>
+                    <tr><td>019</td><td>接口：管理端-待审核司机列表</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-14-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-14-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-14-complete" checked></td></tr>
+                    <tr><td>020</td><td>接口：管理端-司机审核操作</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-15-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-15-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-15-complete" checked></td></tr>
+                    <tr><td>021</td><td>接口：管理端-用户列表查询</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-16-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-16-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-16-complete" checked></td></tr>
+                    <tr><td>022</td><td>集成：阿里云短信服务 (发送验证码)</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-17-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-17-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-17-complete" checked></td></tr>
+                    <tr><td>023</td><td>优化：用户注册增加验证码校验</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-18-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-18-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-18-complete" checked></td></tr>
+                    <tr><td>024</td><td>接口：管理端-数据统计面板</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-19-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-19-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-19-complete" checked></td></tr>
+                    <tr><td>025</td><td>优化：统一接口错误处理格式</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-20-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-20-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-20-complete" checked></td></tr>
                     <tr><td>026</td><td>测试：编写Postman接口测试用例</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-21-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-21-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-21-complete"></td></tr>
-                    <tr><td>027</td><td>修复：服务端Bug修复</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-22-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-22-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-22-complete"></td></tr>
-                    <tr><td>028</td><td>文档：生成接口文档</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-23-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-23-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-23-complete"></td></tr>
-                    <tr><td>029</td><td>部署：服务端部署到测试服务器</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-24-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-24-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-24-complete"></td></tr>
-                    <tr><td>030</td><td>验收：服务端全流程打通</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-25-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-25-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-25-complete"></td></tr>
+                    <tr><td>027</td><td>修复：服务端Bug修复</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-22-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task2-22-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-22-complete"></td></tr>
+                    <tr><td>028</td><td>文档：生成接口文档</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task2-23-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task2-23-remark" placeholder="填写备注..." value="modi-api-design.html"></td><td><input type="checkbox" class="task-checkbox" data-key="task2-23-complete"></td></tr>
+                    <tr><td>029</td><td>部署：服务端部署到测试服务器</td><td>2h</td><td><input type="text" class="status-input" data-key="task2-24-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-24-remark" placeholder="填写备注..." value="方案A+Gitee docs/deploy-server.md"></td><td><input type="checkbox" class="task-checkbox" data-key="task2-24-complete" checked></td></tr>
+                    <tr><td>030</td><td>验收：服务端全流程打通</td><td>1h</td><td><input type="text" class="status-input" data-key="task2-25-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task2-25-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task2-25-complete" checked></td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- 第三阶段：司机端开发 -->
+        <!-- 第三阶段：mody-app 司机身份 -->
         <div class="task-section">
-            <h3>📝 第三阶段：司机端开发 (第31-55天)</h3>
-            <p>核心：React Native，定位与状态</p>
+            <h3>📝 第三阶段：mody-app 司机身份 (第31-55天)</h3>
+            <p>核心：React Native，定位与状态（在 mody-app 内以司机身份使用）</p>
             <table class="task-table" id="phase3Table">
                 <thead>
                     <tr>
@@ -326,39 +325,39 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>031</td><td>司机端：初始化RN+Expo项目</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-1-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-1-complete"></td></tr>
-                    <tr><td>032</td><td>司机端：配置导航栈 (注册/登录/首页)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-2-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-2-complete"></td></tr>
-                    <tr><td>033</td><td>页面：司机注册UI (表单布局)</td><td>2h</td><td><input type="text" class="status-input" data-key="task3-3-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-3-complete"></td></tr>
-                    <tr><td>034</td><td>功能：注册表单校验 (react-hook-form)</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-4-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-4-complete"></td></tr>
-                    <tr><td>035</td><td>对接：注册接口与反馈提示</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-5-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-5-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-5-complete"></td></tr>
-                    <tr><td>036</td><td>页面：司机登录UI</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-6-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-6-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-6-complete"></td></tr>
-                    <tr><td>037</td><td>对接：登录接口与Token存储</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-7-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-7-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-7-complete"></td></tr>
-                    <tr><td>038</td><td>集成：定位权限申请逻辑</td><td>2h</td><td><input type="text" class="status-input" data-key="task3-8-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-8-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-8-complete"></td></tr>
-                    <tr><td>039</td><td>功能：获取并显示当前定位</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-9-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-9-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-9-complete"></td></tr>
-                    <tr><td>040</td><td>功能：每30秒定时上报定位</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-10-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-10-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-10-complete"></td></tr>
-                    <tr><td>041</td><td>组件：接客状态切换按钮 (UI)</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-11-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-11-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-11-complete"></td></tr>
-                    <tr><td>042</td><td>对接：状态切换接口</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-12-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-12-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-12-complete"></td></tr>
-                    <tr><td>043</td><td>页面：“我的”页面UI与信息展示</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-13-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-13-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-13-complete"></td></tr>
-                    <tr><td>044</td><td>整合：司机端首页布局</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-14-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-14-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-14-complete"></td></tr>
-                    <tr><td>045</td><td>适配：iOS样式与状态栏适配</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-15-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-15-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-15-complete"></td></tr>
-                    <tr><td>046</td><td>功能：退出登录</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task3-16-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-16-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-16-complete"></td></tr>
-                    <tr><td>047</td><td>处理：网络异常与错误提示</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-17-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-17-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-17-complete"></td></tr>
-                    <tr><td>048</td><td>测试：核心流程走查</td><td>2h</td><td><input type="text" class="status-input" data-key="task3-18-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-18-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-18-complete"></td></tr>
-                    <tr><td>049</td><td>修复：司机端Bug修复</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-19-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-19-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-19-complete"></td></tr>
+                    <tr><td>031</td><td>mody-app：司机身份流程（身份选择→登录→司机首页）</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-1-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-1-complete" checked></td></tr>
+                    <tr><td>032</td><td>配置导航栈 (身份选择/注册/登录/司机首页)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-2-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-2-complete" checked></td></tr>
+                    <tr><td>033</td><td>页面：司机注册UI (表单布局)</td><td>2h</td><td><input type="text" class="status-input" data-key="task3-3-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-3-complete" checked></td></tr>
+                    <tr><td>034</td><td>功能：注册表单校验 (react-hook-form)</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-4-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-4-complete" checked></td></tr>
+                    <tr><td>035</td><td>对接：注册接口与反馈提示</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-5-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-5-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-5-complete" checked></td></tr>
+                    <tr><td>036</td><td>页面：司机登录UI</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-6-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-6-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-6-complete" checked></td></tr>
+                    <tr><td>037</td><td>对接：登录接口与Token存储</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-7-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-7-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-7-complete" checked></td></tr>
+                    <tr><td>038</td><td>集成：定位权限申请逻辑</td><td>2h</td><td><input type="text" class="status-input" data-key="task3-8-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-8-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-8-complete" checked></td></tr>
+                    <tr><td>039</td><td>功能：获取并显示当前定位</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-9-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-9-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-9-complete" checked></td></tr>
+                    <tr><td>040</td><td>功能：定时上报定位</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-10-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-10-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-10-complete" checked></td></tr>
+                    <tr><td>041</td><td>组件：接客状态切换按钮 (UI)</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-11-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-11-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-11-complete" checked></td></tr>
+                    <tr><td>042</td><td>对接：状态切换接口 (availability)</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-12-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-12-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-12-complete" checked></td></tr>
+                    <tr><td>043</td><td>页面：“我的”页面UI与信息展示</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-13-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-13-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-13-complete" checked></td></tr>
+                    <tr><td>044</td><td>整合：司机身份首页布局</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-14-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-14-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-14-complete" checked></td></tr>
+                    <tr><td>045</td><td>适配：iOS样式与状态栏适配</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-15-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task3-15-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-15-complete"></td></tr>
+                    <tr><td>046</td><td>功能：退出登录</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task3-16-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-16-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-16-complete" checked></td></tr>
+                    <tr><td>047</td><td>处理：网络异常与错误提示</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-17-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-17-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-17-complete" checked></td></tr>
+                    <tr><td>048</td><td>测试：核心流程走查</td><td>2h</td><td><input type="text" class="status-input" data-key="task3-18-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task3-18-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-18-complete"></td></tr>
+                    <tr><td>049</td><td>修复：司机端Bug修复</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-19-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task3-19-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-19-complete"></td></tr>
                     <tr><td>050</td><td>优化：定位上报性能防抖</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-20-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-20-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-20-complete"></td></tr>
-                    <tr><td>051</td><td>功能：待审核状态提示组件</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task3-21-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-21-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-21-complete"></td></tr>
-                    <tr><td>052</td><td>功能：验证码登录</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-22-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-22-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-22-complete"></td></tr>
+                    <tr><td>051</td><td>功能：待审核状态提示组件</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task3-21-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-21-remark" placeholder="填写备注..." value="DriverVerificationScreen"></td><td><input type="checkbox" class="task-checkbox" data-key="task3-21-complete" checked></td></tr>
+                    <tr><td>052</td><td>功能：验证码登录</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task3-22-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task3-22-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-22-complete" checked></td></tr>
                     <tr><td>053</td><td>测试：边缘场景测试</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-23-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-23-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-23-complete"></td></tr>
                     <tr><td>054</td><td>修复：边缘场景Bug</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-24-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-24-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-24-complete"></td></tr>
-                    <tr><td>055</td><td>验收：司机端功能冻结</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-25-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task3-25-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-25-complete"></td></tr>
+                    <tr><td>055</td><td>验收：司机身份功能冻结</td><td>1h</td><td><input type="text" class="status-input" data-key="task3-25-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task3-25-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task3-25-complete"></td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- 第四阶段：用户端开发 -->
+        <!-- 第四阶段：mody-app 乘客身份 -->
         <div class="task-section">
-            <h3>📝 第四阶段：用户端开发 (第56-80天)</h3>
-            <p>核心：React Native，地图交互</p>
+            <h3>📝 第四阶段：mody-app 乘客身份 (第56-80天)</h3>
+            <p>核心：React Native，地图与附近司机交互（在 mody-app 内以乘客身份使用）</p>
             <table class="task-table" id="phase4Table">
                 <thead>
                     <tr>
@@ -371,39 +370,39 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>056</td><td>用户端：初始化RN+Expo项目</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-1-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-1-complete"></td></tr>
-                    <tr><td>057</td><td>用户端：配置导航栈</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-2-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-2-complete"></td></tr>
-                    <tr><td>058</td><td>页面：用户注册UI</td><td>2h</td><td><input type="text" class="status-input" data-key="task4-3-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-3-complete"></td></tr>
-                    <tr><td>059</td><td>对接：注册表单与接口</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-4-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-4-complete"></td></tr>
-                    <tr><td>060</td><td>对接：用户登录与Token</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-5-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-5-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-5-complete"></td></tr>
-                    <tr><td>061</td><td>集成：高德地图与当前定位</td><td>2h</td><td><input type="text" class="status-input" data-key="task4-6-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-6-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-6-complete"></td></tr>
-                    <tr><td>062</td><td>对接：获取附近司机列表接口</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-7-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-7-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-7-complete"></td></tr>
-                    <tr><td>063</td><td>功能：地图Marker标记司机 (分色)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-8-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-8-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-8-complete"></td></tr>
-                    <tr><td>064</td><td>组件：司机信息弹窗UI</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-9-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-9-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-9-complete"></td></tr>
-                    <tr><td>065</td><td>交互：Marker点击弹出弹窗</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-10-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-10-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-10-complete"></td></tr>
-                    <tr><td>066</td><td>集成：拨打电话功能</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-11-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-11-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-11-complete"></td></tr>
-                    <tr><td>067</td><td>页面：个人中心UI</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-12-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-12-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-12-complete"></td></tr>
-                    <tr><td>068</td><td>整合：用户端首页布局</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-13-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-13-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-13-complete"></td></tr>
-                    <tr><td>069</td><td>适配：iOS地图与弹窗样式</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-14-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-14-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-14-complete"></td></tr>
-                    <tr><td>070</td><td>功能：退出登录</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task4-15-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-15-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-15-complete"></td></tr>
-                    <tr><td>071</td><td>处理：网络异常提示</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-16-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-16-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-16-complete"></td></tr>
+                    <tr><td>056</td><td>mody-app：乘客身份流程（身份选择→登录→乘客首页）</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-1-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-1-complete" checked></td></tr>
+                    <tr><td>057</td><td>乘客身份：配置导航栈</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-2-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-2-complete" checked></td></tr>
+                    <tr><td>058</td><td>页面：用户注册UI</td><td>2h</td><td><input type="text" class="status-input" data-key="task4-3-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-3-complete" checked></td></tr>
+                    <tr><td>059</td><td>对接：注册表单与接口</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-4-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-4-complete" checked></td></tr>
+                    <tr><td>060</td><td>对接：用户登录与Token</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-5-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-5-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-5-complete" checked></td></tr>
+                    <tr><td>061</td><td>集成：高德地图与当前定位</td><td>2h</td><td><input type="text" class="status-input" data-key="task4-6-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-6-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-6-complete" checked></td></tr>
+                    <tr><td>062</td><td>对接：获取附近司机列表接口</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-7-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-7-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-7-complete" checked></td></tr>
+                    <tr><td>063</td><td>功能：地图Marker标记司机 (分色)</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-8-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-8-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-8-complete" checked></td></tr>
+                    <tr><td>064</td><td>组件：司机信息弹窗UI</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-9-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-9-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-9-complete" checked></td></tr>
+                    <tr><td>065</td><td>交互：Marker点击弹出弹窗</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-10-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-10-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-10-complete" checked></td></tr>
+                    <tr><td>066</td><td>集成：拨打电话功能</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-11-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task4-11-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-11-complete"></td></tr>
+                    <tr><td>067</td><td>页面：个人中心UI</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-12-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-12-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-12-complete" checked></td></tr>
+                    <tr><td>068</td><td>整合：乘客身份首页布局</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-13-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-13-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-13-complete" checked></td></tr>
+                    <tr><td>069</td><td>适配：iOS地图与弹窗样式</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-14-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task4-14-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-14-complete"></td></tr>
+                    <tr><td>070</td><td>功能：退出登录</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task4-15-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-15-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-15-complete" checked></td></tr>
+                    <tr><td>071</td><td>处理：网络异常提示</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-16-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-16-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-16-complete" checked></td></tr>
                     <tr><td>072</td><td>优化：地图性能 (缓存/懒加载)</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-17-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-17-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-17-complete"></td></tr>
-                    <tr><td>073</td><td>功能：验证码登录</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-18-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-18-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-18-complete"></td></tr>
-                    <tr><td>074</td><td>测试：核心流程走查</td><td>2h</td><td><input type="text" class="status-input" data-key="task4-19-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-19-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-19-complete"></td></tr>
-                    <tr><td>075</td><td>修复：用户端Bug修复</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-20-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-20-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-20-complete"></td></tr>
+                    <tr><td>073</td><td>功能：验证码登录</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task4-18-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task4-18-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-18-complete" checked></td></tr>
+                    <tr><td>074</td><td>测试：核心流程走查</td><td>2h</td><td><input type="text" class="status-input" data-key="task4-19-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task4-19-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-19-complete"></td></tr>
+                    <tr><td>075</td><td>修复：乘客端Bug修复</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-20-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task4-20-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-20-complete"></td></tr>
                     <tr><td>076</td><td>处理：无司机/无定位边缘场景</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-21-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-21-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-21-complete"></td></tr>
                     <tr><td>077</td><td>优化：加载动画与交互体验</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-22-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-22-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-22-complete"></td></tr>
                     <tr><td>078</td><td>功能：实名认证状态展示</td><td>0.5h</td><td><input type="text" class="status-input" data-key="task4-23-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-23-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-23-complete"></td></tr>
                     <tr><td>079</td><td>测试：边缘场景测试</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-24-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-24-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-24-complete"></td></tr>
-                    <tr><td>080</td><td>验收：用户端功能冻结</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-25-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task4-25-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-25-complete"></td></tr>
+                    <tr><td>080</td><td>验收：乘客身份功能冻结</td><td>1h</td><td><input type="text" class="status-input" data-key="task4-25-status" value="进行中"></td><td><input type="text" class="remark-input" data-key="task4-25-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task4-25-complete"></td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- 第五阶段：管理端开发 -->
+        <!-- 第五阶段：管理端开发 (admin-web) -->
         <div class="task-section">
-            <h3>📝 第五阶段：管理端开发 (第81-85天)</h3>
-            <p>核心：React Native，数据管理</p>
+            <h3>📝 第五阶段：管理端开发 admin-web (第81-85天)</h3>
+            <p>核心：Vite Web，审核与数据面板</p>
             <table class="task-table" id="phase5Table">
                 <thead>
                     <tr>
@@ -416,19 +415,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>081</td><td>管理端：初始化RN+Expo项目</td><td>1h</td><td><input type="text" class="status-input" data-key="task5-1-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task5-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-1-complete"></td></tr>
-                    <tr><td>082</td><td>页面：司机审核列表 (对接接口)</td><td>2h</td><td><input type="text" class="status-input" data-key="task5-2-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task5-2-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-2-complete"></td></tr>
-                    <tr><td>083</td><td>功能：审核通过/驳回操作</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task5-3-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task5-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-3-complete"></td></tr>
-                    <tr><td>084</td><td>页面：数据统计面板与图表</td><td>2h</td><td><input type="text" class="status-input" data-key="task5-4-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task5-4-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-4-complete"></td></tr>
-                    <tr><td>085</td><td>验收：管理端核心功能完成</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task5-5-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task5-5-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-5-complete"></td></tr>
+                    <tr><td>081</td><td>管理端：初始化 Vite 项目 (admin-web)</td><td>1h</td><td><input type="text" class="status-input" data-key="task5-1-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task5-1-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-1-complete" checked></td></tr>
+                    <tr><td>082</td><td>页面：司机审核列表 (对接接口)</td><td>2h</td><td><input type="text" class="status-input" data-key="task5-2-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task5-2-remark" placeholder="填写备注..." value="DriverReview"></td><td><input type="checkbox" class="task-checkbox" data-key="task5-2-complete" checked></td></tr>
+                    <tr><td>083</td><td>功能：审核通过/驳回操作</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task5-3-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task5-3-remark" placeholder="填写备注..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-3-complete" checked></td></tr>
+                    <tr><td>084</td><td>页面：数据统计面板与图表</td><td>2h</td><td><input type="text" class="status-input" data-key="task5-4-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task5-4-remark" placeholder="填写备注..." value="Stats"></td><td><input type="checkbox" class="task-checkbox" data-key="task5-4-complete" checked></td></tr>
+                    <tr><td>085</td><td>验收：管理端核心功能完成</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task5-5-status" value="已完成"></td><td><input type="text" class="remark-input" data-key="task5-5-remark" placeholder="阶段验收日..."></td><td><input type="checkbox" class="task-checkbox" data-key="task5-5-complete" checked></td></tr>
                 </tbody>
             </table>
         </div>
 
         <!-- 第六阶段：联调与上架 -->
         <div class="task-section">
-            <h3>📝 第六阶段：联调与iOS上架 (第86-90天)</h3>
-            <p>核心：跨端协同，最终打包</p>
+            <h3>📝 第六阶段：联调与上架 (第86-90天)</h3>
+            <p>核心：跨端协同，最终打包（C 端 mody-app ↔ server ↔ admin-web）</p>
             <table class="task-table" id="phase6Table">
                 <thead>
                     <tr>
@@ -448,6 +447,67 @@
                     <tr><td>090</td><td>终章：iOS打包与App Store提审</td><td>1.5h</td><td><input type="text" class="status-input" data-key="task6-5-status" value="未开始"></td><td><input type="text" class="remark-input" data-key="task6-5-remark" placeholder="大功告成！..."></td><td><input type="checkbox" class="task-checkbox" data-key="task6-5-complete"></td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- 新里程碑：产品扩展与迭代 -->
+        <div class="task-section">
+            <h3>🌟 新里程碑：产品扩展与迭代</h3>
+            <p>在核心三端闭环基础上，按产品思维规划的下一阶段目标（可勾选推进）</p>
+            <table class="task-table" id="phaseNewTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>目标点</th>
+                        <th>说明/参考</th>
+                        <th>状态</th>
+                        <th>备注</th>
+                        <th>完成</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>N01</td>
+                        <td>mody 官网项目</td>
+                        <td>参考 <a href="https://www.effie.co/" target="_blank" rel="noopener">Effie 官网</a>：品牌介绍、产品亮点、软件下载（Android/iOS）、联系与关于</td>
+                        <td><input type="text" class="status-input" data-key="new1-status" value="未开始"></td>
+                        <td><input type="text" class="remark-input" data-key="new1-remark" placeholder="填写备注..."></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="new1-complete"></td>
+                    </tr>
+                    <tr>
+                        <td>N02</td>
+                        <td>「分销」改为「推广」体系</td>
+                        <td>产品文案与功能命名统一为「推广」：推广员、推广链接、推广数据等（若已有分销逻辑则做重命名与文档更新）</td>
+                        <td><input type="text" class="status-input" data-key="new2-status" value="未开始"></td>
+                        <td><input type="text" class="remark-input" data-key="new2-remark" placeholder="填写备注..."></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="new2-complete"></td>
+                    </tr>
+                    <tr>
+                        <td>N03</td>
+                        <td>各端配合 AI 迭代升级</td>
+                        <td>C 端 / 管理端 / 服务端：智能推荐、客服/审核辅助、数据洞察等 AI 能力规划与落地</td>
+                        <td><input type="text" class="status-input" data-key="new3-status" value="未开始"></td>
+                        <td><input type="text" class="remark-input" data-key="new3-remark" placeholder="填写备注..."></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="new3-complete"></td>
+                    </tr>
+                    <tr>
+                        <td>N04</td>
+                        <td>官网下载页与应用商店引导</td>
+                        <td>官网提供各平台下载入口；应用商店上架后的链接与二维码汇总，便于推广</td>
+                        <td><input type="text" class="status-input" data-key="new4-status" value="未开始"></td>
+                        <td><input type="text" class="remark-input" data-key="new4-remark" placeholder="填写备注..."></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="new4-complete"></td>
+                    </tr>
+                    <tr>
+                        <td>N05</td>
+                        <td>运营/数据看板增强</td>
+                        <td>管理端：更多统计维度、导出报表、运营活动配置等，支撑日常运营决策</td>
+                        <td><input type="text" class="status-input" data-key="new5-status" value="未开始"></td>
+                        <td><input type="text" class="remark-input" data-key="new5-remark" placeholder="填写备注..."></td>
+                        <td><input type="checkbox" class="task-checkbox" data-key="new5-complete"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="save-note">💡 以上为建议方向，可按优先级勾选与调整；完成状态同样会保存到本地</p>
         </div>
     </div>
 

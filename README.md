@@ -14,7 +14,7 @@
 | **user-app** | 原用户端 RN 应用（**暂保留**，后续再删除） |
 | **driver-app** | 原司机端 RN 应用（**暂保留**，后续再删除） |
 
-文档：`mody-app-prompt.md`（mody-app 整合与执行说明）、`modi-progress.html`（进度）、`modi-api-design.html`、`modi-tech-stack.html` 等。
+文档：<code>README.md</code>、<code>z-agent-context.md</code>、<code>modi-progress.html</code>、<code>modi-api-design.html</code>、<code>modi-database-design.html</code>、<code>modi-requirements.html</code>、<code>modi-tech-stack.html</code>、<code>modi-phase-summary.html</code>；部署见 <code>docs/deploy-server.md</code>。
 
 ---
 
@@ -39,7 +39,7 @@ npm run start          # Metro 默认 8081
 npm run android        # 或 ios
 ```
 
-*（mody-app 已创建，统一登录与身份选择/切换已实现；详见根目录 `mody-app-prompt.md`。）*
+*（mody-app 已创建，统一登录与身份选择/切换已实现；详见根目录 <code>README.md</code> 与 <code>z-agent-context.md</code>。）*
 
 ### 服务端（server）
 

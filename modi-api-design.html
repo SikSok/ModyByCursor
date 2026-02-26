@@ -97,7 +97,7 @@
             <tr><td><span class="badge b-post">POST</span></td><td class="mono">/users/register</td><td>注册</td><td class="mono">{ phone, password, code, name? }</td></tr>
             <tr><td><span class="badge b-post">POST</span></td><td class="mono">/users/login</td><td>登录</td><td class="mono">{ phone, password }</td></tr>
             <tr><td><span class="badge b-get">GET</span></td><td class="mono">/users/profile</td><td>个人信息</td><td>Header: <span class="mono">Authorization: Bearer &lt;token&gt;</span></td></tr>
-            <tr><td><span class="badge b-patch">PUT</span></td><td class="mono">/users/profile</td><td>更新头像/昵称</td><td class="mono">{ name?, avatar? }</td></tr>
+            <tr><td><span class="badge b-patch">PATCH</span></td><td class="mono">/users/profile</td><td>更新头像/昵称</td><td class="mono">{ name?, avatar? }</td></tr>
           </tbody>
         </table>
       </div>
@@ -130,7 +130,7 @@
             <tr><td><span class="badge b-post">POST</span></td><td class="mono">/drivers/register</td><td>注册（待审核）</td><td class="mono">{ phone,password,code,name,id_card?,license_plate?,vehicle_type? }</td></tr>
             <tr><td><span class="badge b-post">POST</span></td><td class="mono">/drivers/login</td><td>登录（需通过审核）</td><td class="mono">{ phone,password }</td></tr>
             <tr><td><span class="badge b-get">GET</span></td><td class="mono">/drivers/profile</td><td>司机资料</td><td>Header: <span class="mono">Authorization</span></td></tr>
-            <tr><td><span class="badge b-patch">PUT</span></td><td class="mono">/drivers/profile</td><td>更新资料</td><td class="mono">{ name?, avatar?, id_card?, license_plate?, vehicle_type? }</td></tr>
+            <tr><td><span class="badge b-patch">PATCH</span></td><td class="mono">/drivers/profile</td><td>更新资料</td><td class="mono">{ name?, avatar?, id_card?, license_plate?, vehicle_type? }</td></tr>
           </tbody>
         </table>
       </div>
@@ -177,15 +177,15 @@
     </div>
 
     <div class="note">
-      <div class="card-title">落地说明（与你当前代码一致）</div>
+      <div class="card-title">落地说明（与当前代码一致）</div>
       <ul>
         <li><strong>C 端</strong>：mody-app（乘客/司机身份切换，调用用户与司机接口）；<strong>服务端</strong> server；<strong>管理端</strong> admin-web。原 user-app、driver-app 目录暂保留。</li>
-        <li>当前 server 已实现：验证码发送、用户注册验证码校验、司机注册验证码校验、附近司机查询（基于最后一次定位）、审核接口。</li>
-        <li>后续可扩展：验证码登录、司机资料上传图片（身份证/行驶证）、操作日志表等。</li>
+        <li>当前 server 已实现：验证码发送、用户/司机注册与登录（含验证码校验）、定位上报、附近司机查询（基于最后一次定位）、接客状态、管理员登录与司机审核、用户列表、数据统计等接口；部署见 <code>docs/deploy-server.md</code>。</li>
+        <li>后续可扩展：司机资料上传图片（身份证/行驶证）、操作日志表等。供 Phase 6 联调与上架使用。</li>
       </ul>
     </div>
 
-    <footer>基于 modi-requirements.html + 最新表结构设计整理 · 供 Day3/Day4 规划与联调使用</footer>
+    <footer>基于 modi-requirements.html + modi-database-design.html 整理 · 供联调与 Phase 6 使用</footer>
   </div>
 </body>
 </html>
