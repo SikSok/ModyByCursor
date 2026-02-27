@@ -25,7 +25,8 @@ const urls = {
     }
     return `http://${ip}:${port}/api`;
   })(),
-  pre: 'http://47.110.243.97:3000/api'
+  // 预发布 / 正式版接口：走域名，由 Nginx 将 https://api.mody.中国/api 反向代理到本机端口
+  pre: 'https://api.mody.中国/api'
 };
 
 const url = urls[mode] !== undefined ? urls[mode] : (mode.startsWith('http') ? mode : urls.dev);
