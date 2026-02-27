@@ -15,7 +15,7 @@
 | **user-app** | 原用户端 RN 应用（**暂保留**，后续再删除） |
 | **driver-app** | 原司机端 RN 应用（**暂保留**，后续再删除） |
 
-文档：<code>README.md</code>、<code>z-agent-context.md</code>、<code>modi-progress.html</code>、<code>modi-api-design.html</code>、<code>modi-database-design.html</code>、<code>modi-requirements.html</code>、<code>modi-tech-stack.html</code>、<code>modi-phase-summary.html</code>；部署见 <code>docs/deploy-server.md</code>。
+文档：<code>README.md</code>、<code>z-agent-context.md</code>、<code>modi-progress.html</code>、<code>modi-api-design.html</code>、<code>modi-database-design.html</code>、<code>modi-requirements.html</code>、<code>modi-tech-stack.html</code>、<code>modi-phase-summary.html</code>；部署见 <code>docs/deploy-server.md</code>、<code>mody-website/docs/deploy-quick.md</code>、<code>admin-web/docs/deploy-quick.md</code>。
 
 ---
 
