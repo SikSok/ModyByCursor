@@ -2,7 +2,7 @@
 
 > 供新开 Agent 快速了解仓库状态、约定与已解决问题，避免重复踩坑。
 
-**最后更新：2026-02-26**
+**最后更新：2026-02-27**
 
 ---
 
@@ -82,7 +82,16 @@
 
 ---
 
-## 7. 新 Agent 使用本文件
+## 7. 基础网络安全配置（2026-02-27）
+
+- **域名接入**：`mody.中国` 及子域 `www` / `admin` / `api` 已解析到同一 ECS 公网 IP，ICP 备案处理中。
+- **安全组收紧**：仅对公网开放 HTTP（80），SSH 入口限制为个人笔记本所在网络 IP 段，其余端口（如 3000）不对公网开放。
+- **Nginx 加固**：在全局 `http {}` 中配置 `server_tokens off;`，隐藏版本号；官网已使用统一 4xx/5xx 错误页（404 → index.html，50x → 默认 50x.html）。
+- **HTTPS 计划**：等待域名备案通过后，为 `mody.中国` 及 `www/admin/api` 申请并配置证书，统一跳转到 HTTPS。
+
+---
+
+## 8. 新 Agent 使用本文件
 
 - 优先读 **README.md** 与本文件，再按需看 `modi-progress.html`、`docs/deploy-server.md`。
 - 改 C 端请求：保留 `api.ts` 中 BlobUtil 的 `default ?? module` 取用；改 API 基址注意 `apiBaseUrl.js` 与 `dev-lan`/`pre`。

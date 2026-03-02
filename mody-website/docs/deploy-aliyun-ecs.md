@@ -1,4 +1,4 @@
-# 摩的官网部署到阿里云 ECS 方案
+# 摩迪官网部署到阿里云 ECS 方案
 
 本文档说明如何将 `mody-website` 静态官网部署到阿里云 ECS（云服务器）。
 
@@ -176,7 +176,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-浏览器访问：`http://你的ECS公网IP`，应能看到摩的官网首页。
+浏览器访问：`http://你的ECS公网IP`，应能看到摩迪官网首页。
 
 ### 5.2 使用域名
 
@@ -298,4 +298,4 @@ scp -r assets index.html root@你的ECS公网IP:/var/www/mody-website/
 **4. 想用其他端口（如 8080）**  
 - 在 Nginx 中写 `listen 8080;`，安全组放行 8080，访问 `http://IP:8080`。
 
-按上述步骤即可在阿里云 ECS 上稳定运行摩的官网；若你提供当前系统（如 CentOS 版本）和是否用域名/HTTPS，可以再细化成一份你机器上一键执行的命令清单。
+按上述步骤即可在阿里云 ECS 上稳定运行摩迪官网；若你提供当前系统（如 CentOS 版本）和是否用域名/HTTPS，可以再细化成一份你机器上一键执行的命令清单。

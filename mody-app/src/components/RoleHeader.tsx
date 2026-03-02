@@ -12,7 +12,7 @@ export const RoleHeader: React.FC<RoleHeaderProps> = ({ role }) => {
       <View style={styles.gradient} />
       <View style={styles.container}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>摩的</Text>
+          <Text style={styles.badgeText}>摩迪</Text>
         </View>
         <Text style={styles.title}>{role}</Text>
         <Text style={styles.subtitle}>乘客 / 司机 · 一体化</Text>

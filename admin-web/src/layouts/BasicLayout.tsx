@@ -11,7 +11,7 @@ const BasicLayout: React.FC = () => {
 
   return (
     <ProLayout
-      title="摩的管理端"
+      title="摩迪管理端"
       logo={false}
       layout="mix"
       location={{ pathname }}

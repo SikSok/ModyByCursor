@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摩迪 App · 一人公司与上架合规（从内测到上架全指南）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .section h3 {
+            color: #2980b9;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 4px solid #2980b9;
+            font-size: 1.05rem;
+        }
+        .section p, .section li {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .section ul, .section ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        .section ul li, .section ol li {
+            margin-bottom: 6px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: white;
+            background-color: #3498db;
+            margin-right: 6px;
+        }
+        .tag-tip {
+            background-color: #2ecc71;
+        }
+        .tag-warn {
+            background-color: #f39c12;
+        }
+        .tag-danger {
+            background-color: #e74c3c;
+        }
+        .conclusion {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 12px 15px;
+            margin: 15px 0;
+            color: #2c3e50;
+        }
+        .note {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.95rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer-note {
+            color: #95a5a6;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>摩迪 App · 一人公司与上架合规（从内测到上架）</h1>
+        <p class="note" style="text-align: center; margin-bottom: 25px;">先内测 APK → 认可后再注册一人公司上架 · 福州 · 路径 1 纯信息撮合 · 仅供参考</p>
+
+        <!-- 〇、总体路线与一人公司须知（最新对话归纳） -->
+        <div class="section">
+            <h2>〇、总体路线与一人公司须知</h2>
+            <p>以下为当前执行思路的归纳：<strong>先集中做 App、小范围 APK 内测，等师傅与用户认可后再注册一人公司并上架</strong>。同时厘清一人公司何时合法、与多人公司如何选、成本几何、内测是否合规。</p>
+
+            <h3>一人公司何时合法？</h3>
+            <ul>
+                <li><strong>1993–2005</strong>：当时《公司法》要求有限责任公司 2–50 名股东，自然人不能单独设立公司（需法人、监事、股东至少 3 人印象来源于此）。</li>
+                <li><strong>2006 年 1 月 1 日</strong>：2005 年修订的《公司法》实施，首次确立<strong>一人有限责任公司</strong>合法，允许 1 个自然人/法人设立；但限制「一个自然人只能设 1 家」「不得再投新一人公司」且强制年度审计。</li>
+                <li><strong>2024 年 7 月 1 日</strong>：新《公司法》取消上述数量限制，一个自然人可设多家一人公司、可再投资新一人公司；仍保留「股东不能证明财产独立则对公司债务承担连带责任」。</li>
+            </ul>
+
+            <h3>一人公司 vs 多人公司：怎么选？</h3>
+            <ul>
+                <li><strong>现阶段建议优先一人公司</strong>：决策 100% 自主、注册与变更极简、满足小米等应用商店企业资质；年度成本与多人公司相当（记账、银行、年报等），无税负差异。</li>
+                <li><strong>一人公司局限性</strong>：举证责任倒置（需自证财产独立，否则可能连带）；未来引入合伙人/融资时需变更为多人公司。</li>
+                <li><strong>无需担心「一步错」</strong>：一人公司可随时通过股权转让/增资扩股变更为多人公司，只需工商变更，不必重新注册。</li>
+            </ul>
+            <div class="conclusion"><span class="tag tag-tip">结论</span> 先注册一人公司是最优解；未来需要再变更为多人公司即可。</div>
+
+            <h3>一人公司的连续成本（心里有数）</h3>
+            <ul>
+                <li><strong>一次性</strong>：注册+刻章约 500–800 元，对公开户约 300–800 元，地址（自用/挂靠）视情况 0–2000 元/年，合计约 1500–2500 元。</li>
+                <li><strong>每年固定</strong>：代理记账+报税约 2400–3600 元/年，银行年费约 500–800 元/年，工商年报可自助免费；可选审计约 2000 元/年（建议做以证财产独立）。</li>
+                <li><strong>年度合计</strong>：最低约 3000–4500 元/年，稳妥配置（含审计）约 6000 元/年，平摊到每月约 250–500 元。</li>
+            </ul>
+
+            <h3>分阶段路线（当前采用）</h3>
+            <ol>
+                <li><strong>第一阶段（现在起）</strong>：不注册公司、不上架。专心迭代 App Demo，通过 APK 发给父亲 + 2～3 位县城摩迪师傅及乘客试用；不收费、不抽成、不公开推广。此阶段 0 公司成本、合法合规。</li>
+                <li><strong>第二阶段（师傅与乘客认可后）</strong>：再注册一人公司（一次性约 2000 元、年度约 3000+ 元），办理 ICP/APP 备案、软著，上架小米应用商店，按路径 1 正式运营。</li>
+            </ol>
+
+            <h3>内测合法性 + 安全规则</h3>
+            <p>小范围、非盈利、仅熟人/本地师傅试用 = <strong>内部测试/灰度测试</strong>，法律上允许。发 APK 给熟人安装、不公开下载、不收费不抽成 = 不违法。以下 5 条做到即可零风险：</p>
+            <ul>
+                <li>只给熟人、家人、本地认识的师傅用；不发朋友圈、不群发、不公开下载链接。</li>
+                <li>不收费、不抽成、不碰资金；钱由师傅与乘客自行结算。</li>
+                <li>不说「平台运营」「网约车」；只说个人做的小工具、内部测试版。</li>
+                <li>不对外宣传、不扩大范围；要上架/抽成/公开推广时再注册公司。</li>
+                <li>安装仅用 APK 手动分发，不做公开下载页、不上应用商店。</li>
+            </ul>
+
+            <h3>内测话术（可直接发给师傅、乘客）</h3>
+            <div class="conclusion">大家好～我自己做了一个摩迪出行小工具 APP，现在还在内部测试阶段，只给咱们身边熟悉的人试用，不对外公开。主要是想让大家帮忙试试：叫车方不方便、流程顺不顺、有没有哪里不好用。我会根据大家的反馈慢慢优化。目前完全免费、不抽成、不收费，只是纯测试使用，麻烦大家多提意见，谢谢啦～</div>
+        </div>
+
+        <!-- 一、福州一人有限公司申请步骤 -->
+        <div class="section">
+            <h2>一、福州一人有限公司申请步骤（概要）</h2>
+            <p>在福州注册<strong>一人有限责任公司（自然人独资）</strong>，用于运营 Mody 摩迪出行信息撮合平台，并以此主体承接软件开发等其它服务。</p>
+            <ol>
+                <li><strong>确定主体与名称</strong>：一人有限公司，名称预核（如「福州 XX 信息技术有限公司」），行业选「软件和信息技术服务业」。</li>
+                <li><strong>经营范围（建议）</strong>：<span class="tag tag-tip">信息技术咨询服务</span>、<span class="tag tag-tip">互联网信息服务</span>、<span class="tag tag-tip">出行信息撮合</span>；可加「软件开发、技术咨询、技术服务」等，<strong>不要</strong>写「客运」「网约车」。</li>
+                <li><strong>人员与出资</strong>：2026 年新规下无需设监事，单人即可完成注册；注册资本建议 10～50 万，按 5 年内实缴制规划，避免虚高。</li>
+                <li><strong>登记入口</strong>：福建省网上办事大厅 / 闽政通「企业开办」专区，一网通办提交设立登记。</li>
+                <li><strong>领照与后续</strong>：领取营业执照 → 公安刻章备案 → 银行对公开户 → 税务报到；全程顺利约 1～2 周。</li>
+            </ol>
+            <div class="conclusion"><span class="tag tag-warn">重要</span> 一人有限公司需<strong>每年提交财务审计报告</strong>，证明公司财产与个人财产独立，避免承担连带责任。</div>
+        </div>
+
+        <div class="section">
+            <h2>二、一人有限公司能否上架小米应用商店？</h2>
+            <p><strong>可以。</strong>一人有限责任公司（自然人独资）完全符合小米应用商店的企业开发者要求，可按企业开发者身份正常上架 Mody App。</p>
+            <ul>
+                <li>小米澎湃 OS 开发者平台接受「企业开发者」入驻，一人有限公司的营业执照（标注「自然人独资」）属于有效企业资质。</li>
+                <li>小米应用商店暂不接受个人开发者，企业账号是唯一合规路径，一人有限公司可满足。</li>
+            </ul>
+            <div class="conclusion"><span class="tag tag-tip">结论</span> 用一人有限公司注册小米企业开发者，上传营业执照、法人信息完成实名认证即可。</div>
+        </div>
+
+        <div class="section">
+            <h2>三、上架必备资质清单（按路径 1：纯信息撮合）</h2>
+            <p>打车/出行类 App 上架需基础企业资质 + 备案 + 软著；路径 1 不做网约车营运，<strong>不提交、不提及网约车许可</strong>。</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>材料类别</th>
+                        <th>具体要求</th>
+                        <th>注意</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>企业基础</td>
+                        <td>三证合一营业执照、法人身份证、企业实名认证（如法大大）</td>
+                        <td>经营范围含「软件开发」「信息技术服务」；经营状态无异常</td>
+                    </tr>
+                    <tr>
+                        <td>合规备案</td>
+                        <td>ICP 备案、APP 备案回执</td>
+                        <td>备案主体与公司名称完全一致；包名、App 名称与备案信息匹配</td>
+                    </tr>
+                    <tr>
+                        <td>知识产权</td>
+                        <td>计算机软件著作权证书（软著）</td>
+                        <td>软著名称与 App 一致，版本号对应上架版本；权利人为公司</td>
+                    </tr>
+                    <tr>
+                        <td>网约车许可</td>
+                        <td>—</td>
+                        <td><strong>路径 1 不提交</strong>；应用描述写清「仅信息撮合」</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>四、路径 1：纯信息撮合平台（最稳妥）</h2>
+            <p>定位：平台只做<strong>信息匹配</strong>，不参与运输、不抽成、不担保服务。既满足小县城摩迪刚需，又合规上架小米。</p>
+            <h3>4.1 公司层面</h3>
+            <ul>
+                <li>经营范围：<strong>信息技术咨询、互联网信息服务、出行信息撮合</strong>，绝不写「客运」「网约车」。</li>
+            </ul>
+            <h3>4.2 App 功能与协议</h3>
+            <ul>
+                <li>仅展示司机/车辆信息、发布行程、双方联系。</li>
+                <li>支付走司机个人收款码，<strong>平台不碰资金、不抽成</strong>。</li>
+                <li>用户协议明确：平台仅提供信息，运输服务由司机个人提供，责任由司机与乘客自行承担。</li>
+            </ul>
+            <h3>4.3 司机准入（平台自律）</h3>
+            <ul>
+                <li>核验：驾驶证（D/E/F）、行驶证、交强险、头盔。</li>
+                <li>协议：司机承诺合法上路、不超员、佩戴头盔、自行承担营运风险。</li>
+            </ul>
+            <h3>4.4 上架小米时的应用描述（关键句，建议写入）</h3>
+            <div class="conclusion">本 App 为<strong>摩迪出行信息撮合平台</strong>，仅提供司机与乘客的信息匹配服务，不从事道路运输经营活动，运输服务及相关责任由服务提供方与乘客自行承担。</div>
+            <p>若审核问「是否涉及营运」：明确回答「仅信息撮合，平台不抽成、不参与运输」。</p>
+        </div>
+
+        <div class="section">
+            <h2>五、为什么不申请网约车证？</h2>
+            <p>《网络预约出租汽车经营服务管理暂行办法》规定网约车仅限<strong>7 座及以下乘用车</strong>，摩托车被排除。针对摩托车申请网约车经营许可证会因「车辆类型不符」被拒。福建多地对摩托车以整治违法（无牌、无证、加装雨棚等）为主，未开放摩托车网约营运许可。</p>
+            <div class="conclusion"><span class="tag tag-tip">结论</span> 不做「网约摩的」抽成营运，改为纯信息撮合，是当前最可行、合规风险最低的做法。</div>
+        </div>
+
+        <div class="section">
+            <h2>六、避坑指南</h2>
+            <ul>
+                <li><strong>主体一致</strong>：ICP 备案、APP 备案、软著、营业执照的主体名称必须完全相同，否则易审核失败。</li>
+                <li><strong>行业表述</strong>：打车类属重点监管领域，应用描述中明确「仅信息撮合、不提供运输服务」。</li>
+                <li><strong>财务合规</strong>：一人有限公司需规范做账，每年按时完成审计，避免财产混同导致股东承担无限责任。</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>七、用项目佐证实力、拓展其它服务</h2>
+            <p>一人有限公司 + 路径 1 的 Mody 项目，可以同时用于：</p>
+            <ul>
+                <li><strong>佐证实力</strong>：有公司主体、有上架应用（小米等）、有备案与软著，接软件外包、技术咨询时更有说服力。</li>
+                <li><strong>经营范围匹配</strong>：「信息技术咨询服务」「互联网信息服务」「软件开发」等可直接承接别人找你做软件、做系统的需求。</li>
+                <li><strong>成本可控</strong>：在项目尚未盈利甚至亏钱阶段，用一人公司把合规做扎实，后续接外包或其它服务时主体统一、资质齐全。</li>
+            </ul>
+            <div class="conclusion"><span class="tag tag-tip">建议</span> 先完成公司注册与基础合规（备案、软著、小米开发者），再小范围试点 1 个县城，验证模式与监管反馈；同时以该公司名义对外接软件开发等业务。</div>
+        </div>
+
+        <div class="section">
+            <h2>八、下一步行动清单（注册公司后约 7 天可启动上架）</h2>
+            <ol>
+                <li>在福州注册一人有限公司，经营范围：信息技术咨询、互联网信息服务、出行信息撮合（及软件开发等）。</li>
+                <li>完成 ICP 备案、APP 备案，主体与公司一致。</li>
+                <li>申请软著，权利人为公司，名称与 App 一致。</li>
+                <li>注册小米澎湃 OS 开发者平台企业账号，上传执照与法人信息。</li>
+                <li>App 内功能与用户/司机协议按「纯信息撮合」定稿，应用描述写入关键免责句。</li>
+                <li>制定司机端证照核验与安全承诺规则。</li>
+                <li>在 1 个县城小范围试点，观察监管与用户反馈。</li>
+            </ol>
+        </div>
+
+        <p class="footer-note">💡 本页为从内测到上架全流程要点，具体以福州市场监管局、小米开发者平台及当地最新政策为准</p>
+    </div>
+</body>
+</html>

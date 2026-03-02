@@ -13,7 +13,7 @@ export function IdentitySelectScreen({ onSelect }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>选择身份</Text>
-      <Text style={styles.subtitle}>请选择以乘客或司机身份使用摩的</Text>
+      <Text style={styles.subtitle}>请选择以乘客或司机身份使用摩迪</Text>
 
       <Pressable
         style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}

@@ -58,7 +58,7 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>摩的 · 用户端（重构后骨架）</Text>
+      <Text style={styles.title}>摩迪 · 用户端（重构后骨架）</Text>
 
       <View style={styles.tabs}>
         <Pressable onPress={() => setMode('login')} style={[styles.tab, mode === 'login' && styles.tabActive]}>

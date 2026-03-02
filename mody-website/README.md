@@ -1,6 +1,6 @@
-# 摩的 Mody 官网
+# 摩迪 Mody 官网
 
-参考 [Effie 官网](https://www.effie.co/) 风格打造的摩的品牌官网，包含产品介绍、软件下载（扫码）、推广合作（参考 [Effie /dist](https://www.effie.co/dist)）与联系（参考 [Effie /feedback](https://www.effie.co/feedback)）。整站弹性布局，在电脑、平板、手机上均可正常显示。
+参考 [Effie 官网](https://www.effie.co/) 风格打造的摩迪品牌官网，包含产品介绍、软件下载（扫码）、推广合作（参考 [Effie /dist](https://www.effie.co/dist)）与联系（参考 [Effie /feedback](https://www.effie.co/feedback)）。整站弹性布局，在电脑、平板、手机上均可正常显示。
 
 ## 内容结构
 

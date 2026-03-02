@@ -73,7 +73,7 @@ chmod +x /opt/mody/mody-website/scripts/deploy.sh
 cd /opt/mody && mody-website/scripts/deploy.sh
 ```
 
-完成后访问 `http://你的ECS公网IP` 应能看到摩的官网。
+完成后访问 `http://你的ECS公网IP` 应能看到摩迪官网。
 
 ---
 

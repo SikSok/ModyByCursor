@@ -12,7 +12,7 @@ const LoginPage: React.FC = () => {
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: 380 }}>
         <LoginForm
-          title="摩的管理端"
+          title="摩迪管理端"
           subTitle="司机审核与运营看板（Web）"
           onFinish={async (values) => {
             try {
