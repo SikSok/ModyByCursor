@@ -93,6 +93,27 @@ export class UserService {
     };
   }
 
+  /** 乘客端：更新当前用户的上次定位（节流由调用方控制） */
+  async updateLastLocation(
+    id: number,
+    data: { latitude: number; longitude: number }
+  ) {
+    const user = await User.findByPk(id);
+    if (!user) {
+      throw new Error('用户不存在');
+    }
+    await user.update({
+      last_latitude: data.latitude,
+      last_longitude: data.longitude,
+      last_location_updated_at: new Date()
+    });
+    return {
+      last_latitude: data.latitude,
+      last_longitude: data.longitude,
+      last_location_updated_at: new Date()
+    };
+  }
+
   /** 管理端：用户列表分页查询，支持手机号、状态筛选 */
   async listUsers(options: {
     page?: number;

@@ -8,12 +8,15 @@ interface UserAttributes {
   name?: string;
   avatar?: string;
   status: 0 | 1;
+  last_latitude?: number | null;
+  last_longitude?: number | null;
+  last_location_updated_at?: Date | null;
   created_at?: Date;
   updated_at?: Date;
 }
 
 interface UserCreationAttributes
-  extends Optional<UserAttributes, 'id' | 'name' | 'avatar' | 'status' | 'created_at' | 'updated_at'> {}
+  extends Optional<UserAttributes, 'id' | 'name' | 'avatar' | 'status' | 'last_latitude' | 'last_longitude' | 'last_location_updated_at' | 'created_at' | 'updated_at'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
@@ -22,6 +25,9 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public name?: string;
   public avatar?: string;
   public status!: 0 | 1;
+  public last_latitude?: number | null;
+  public last_longitude?: number | null;
+  public last_location_updated_at?: Date | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -54,6 +60,18 @@ User.init(
       type: DataTypes.TINYINT,
       allowNull: false,
       defaultValue: 1
+    },
+    last_latitude: {
+      type: DataTypes.DOUBLE,
+      allowNull: true
+    },
+    last_longitude: {
+      type: DataTypes.DOUBLE,
+      allowNull: true
+    },
+    last_location_updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   },
   {

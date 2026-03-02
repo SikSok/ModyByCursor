@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,24 @@ import {
 import { AMapSdk, MapView, Marker } from 'react-native-amap3d';
 import type { CameraPosition } from 'react-native-amap3d';
 import Geolocation from '@react-native-community/geolocation';
-import { getNearbyDrivers, getUserFacingMessage } from '../services/api';
+import {
+  getNearbyDrivers,
+  getUserProfile,
+  updateUserLastLocation,
+  getUserFacingMessage,
+} from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useIdentity } from '../context/IdentityContext';
 import { theme } from '../theme';
 import { AMAP_KEY } from '../config/amapKey';
 
-const DEFAULT_LAT = 31.23;
-const DEFAULT_LNG = 121.47;
+/** 闽清县梅城镇默认坐标（无定位且无上次定位时使用） */
+const DEFAULT_LAT = 26.2234;
+const DEFAULT_LNG = 118.8634;
+const DEFAULT_LABEL = '闽清县梅城镇';
+
+/** 上次定位上报节流：最小间隔（毫秒） */
+const LAST_LOCATION_THROTTLE_MS = 2 * 60 * 1000;
 
 type NearbyItem = {
   driver: { id: number; phone?: string; name: string; vehicle_type?: string };
@@ -52,12 +63,18 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
 
 export function PassengerHomeScreen() {
   const { showToast } = useToast();
-  const [center, setCenter] = useState<{ lat: number; lng: number }>({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
+  const { userToken } = useIdentity();
+  const [center, setCenter] = useState<{ lat: number; lng: number }>({
+    lat: DEFAULT_LAT,
+    lng: DEFAULT_LNG,
+  });
+  const [locationLabel, setLocationLabel] = useState<string>(DEFAULT_LABEL);
   const [drivers, setDrivers] = useState<NearbyItem[]>([]);
   const [selected, setSelected] = useState<NearbyItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationFailed, setLocationFailed] = useState(false);
   const mapRef = useRef<any>(null);
+  const lastLocationSentAt = useRef<number>(0);
 
   useEffect(() => {
     const key = Platform.select({ android: AMAP_KEY, ios: AMAP_KEY });
@@ -66,21 +83,60 @@ export function PassengerHomeScreen() {
     }
   }, []);
 
+  const fetchNearbyWithCenter = useCallback(
+    async (lat: number, lng: number) => {
+      try {
+        const res = await getNearbyDrivers({ lat, lng, radius_km: 10 });
+        const list = Array.isArray(res.data) ? res.data : [];
+        if (list.length === 0) {
+          setDrivers(getMockDrivers(lat, lng));
+        } else {
+          setDrivers(list);
+        }
+      } catch (e: any) {
+        showToast(getUserFacingMessage(e, '获取附近司机失败'), 'error');
+        setDrivers(getMockDrivers(lat, lng));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [showToast]
+  );
+
+  const tryUpdateLastLocation = useCallback(
+    (lat: number, lng: number) => {
+      if (!userToken) return;
+      const now = Date.now();
+      if (now - lastLocationSentAt.current < LAST_LOCATION_THROTTLE_MS) return;
+      lastLocationSentAt.current = now;
+      updateUserLastLocation(userToken, { latitude: lat, longitude: lng }).catch(() => {
+        // 静默失败，不影响使用
+      });
+    },
+    [userToken]
+  );
+
   useEffect(() => {
     let cancelled = false;
     let lat = DEFAULT_LAT;
     let lng = DEFAULT_LNG;
+    let label = DEFAULT_LABEL;
 
     async function run() {
       if (Platform.OS === 'android') {
         try {
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            { title: '定位权限', message: '用于展示您附近的可接客司机', buttonNeutral: '稍后', buttonNegative: '拒绝', buttonPositive: '允许' }
+            {
+              title: '定位权限',
+              message: '用于展示您附近的可接客司机',
+              buttonNeutral: '稍后',
+              buttonNegative: '拒绝',
+              buttonPositive: '允许',
+            }
           );
           if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
             if (!cancelled) {
-              showToast('未获取到定位，显示默认区域', 'info');
               setLocationFailed(true);
             }
           }
@@ -89,6 +145,7 @@ export function PassengerHomeScreen() {
         }
       }
 
+      // 1) 尝试当前定位
       try {
         const pos = await new Promise<{ lat: number; lng: number }>((resolve, reject) => {
           Geolocation.getCurrentPosition(
@@ -99,39 +156,78 @@ export function PassengerHomeScreen() {
         });
         lat = pos.lat;
         lng = pos.lng;
-        if (!cancelled) setCenter({ lat, lng });
-        if (mapRef.current && !cancelled) {
-          mapRef.current.moveCamera({ target: { latitude: lat, longitude: lng }, zoom: 14 }, 300);
-        }
-      } catch (_) {
+        label = '当前位置';
         if (!cancelled) {
-          setLocationFailed(true);
+          setCenter({ lat, lng });
+          setLocationLabel(label);
+        }
+        if (mapRef.current && !cancelled) {
+          mapRef.current.moveCamera(
+            { target: { latitude: lat, longitude: lng }, zoom: 14 },
+            300
+          );
+        }
+        tryUpdateLastLocation(lat, lng);
+      } catch (_) {
+        if (!cancelled) setLocationFailed(true);
+        // 2) 无当前定位：尝试服务端「上次定位」
+        if (userToken) {
+          try {
+            const res = await getUserProfile(userToken);
+            const data = res.data as any;
+            const lastLat = data?.last_latitude;
+            const lastLng = data?.last_longitude;
+            if (
+              !cancelled &&
+              Number.isFinite(lastLat) &&
+              Number.isFinite(lastLng)
+            ) {
+              lat = lastLat;
+              lng = lastLng;
+              label = '上次位置';
+              setCenter({ lat, lng });
+              setLocationLabel(label);
+              if (mapRef.current) {
+                mapRef.current.moveCamera(
+                  { target: { latitude: lat, longitude: lng }, zoom: 14 },
+                  300
+                );
+              }
+            }
+          } catch (_) {
+            // 无上次定位，保持默认闽清县梅城镇
+          }
+        }
+        if (!cancelled && label === DEFAULT_LABEL) {
+          setCenter({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
+          setLocationLabel(DEFAULT_LABEL);
+          if (mapRef.current) {
+            mapRef.current.moveCamera(
+              {
+                target: { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG },
+                zoom: 14,
+              },
+              300
+            );
+          }
+        }
+        if (!cancelled) {
           showToast('未获取到定位，显示默认区域', 'info');
         }
       }
 
       try {
-        const res = await getNearbyDrivers({ lat, lng, radius_km: 10 });
-        if (cancelled) return;
-        const list = Array.isArray(res.data) ? res.data : [];
-        if (list.length === 0) {
-          setDrivers(getMockDrivers(lat, lng));
-        } else {
-          setDrivers(list);
-        }
-      } catch (e: any) {
-        if (!cancelled) {
-          showToast(getUserFacingMessage(e, '获取附近司机失败'), 'error');
-          setDrivers(getMockDrivers(lat, lng));
-        }
-      } finally {
+        await fetchNearbyWithCenter(lat, lng);
+      } catch (_) {
         if (!cancelled) setLoading(false);
       }
     }
 
     run();
-    return () => { cancelled = true; };
-  }, [showToast]);
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast, userToken, fetchNearbyWithCenter, tryUpdateLastLocation]);
 
   const cameraPosition: CameraPosition = {
     target: { latitude: center.lat, longitude: center.lng },
@@ -150,19 +246,40 @@ export function PassengerHomeScreen() {
           scaleControlsEnabled
           compassEnabled
           onLoad={() => {
-            if (mapRef.current && center.lat !== DEFAULT_LAT && center.lng !== DEFAULT_LNG) {
-              mapRef.current.moveCamera({ target: { latitude: center.lat, longitude: center.lng }, zoom: 14 }, 0);
+            if (
+              mapRef.current &&
+              (center.lat !== DEFAULT_LAT || center.lng !== DEFAULT_LNG)
+            ) {
+              mapRef.current.moveCamera(
+                {
+                  target: { latitude: center.lat, longitude: center.lng },
+                  zoom: 14,
+                },
+                0
+              );
             }
           }}
         >
           {drivers.map((item) => (
             <Marker
               key={item.driver.id}
-              position={{ latitude: item.location.latitude, longitude: item.location.longitude }}
+              position={{
+                latitude: item.location.latitude,
+                longitude: item.location.longitude,
+              }}
               onPress={() => setSelected(item)}
             />
           ))}
         </MapView>
+
+        {/* 左上角：当前使用的定位位置（图标 + 文案） */}
+        <View style={styles.locationChip}>
+          <Text style={styles.locationIcon}>📍</Text>
+          <Text style={styles.locationText} numberOfLines={1}>
+            {locationLabel}
+          </Text>
+        </View>
+
         {loading && (
           <View style={styles.loadingMask}>
             <ActivityIndicator size="large" color={theme.accent} />
@@ -193,14 +310,21 @@ export function PassengerHomeScreen() {
                   </Pressable>
                 </View>
                 <Text style={styles.modalName}>{selected.driver.name}</Text>
-                <Text style={styles.modalDistance}>约 {selected.distance_km.toFixed(1)} km</Text>
+                <Text style={styles.modalDistance}>
+                  约 {selected.distance_km.toFixed(1)} km
+                </Text>
                 {selected.driver.vehicle_type ? (
                   <Text style={styles.modalMeta}>{selected.driver.vehicle_type}</Text>
                 ) : null}
                 {selected.driver.phone ? (
                   <Pressable
-                    style={({ pressed }) => [styles.callBtn, pressed && styles.callBtnPressed]}
-                    onPress={() => Linking.openURL('tel:' + selected.driver.phone)}
+                    style={({ pressed }) => [
+                      styles.callBtn,
+                      pressed && styles.callBtnPressed,
+                    ]}
+                    onPress={() =>
+                      Linking.openURL('tel:' + selected.driver.phone)
+                    }
                   >
                     <Text style={styles.callBtnText}>拨打电话</Text>
                   </Pressable>
@@ -229,6 +353,32 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
+  locationChip: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: theme.borderRadiusSm,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    maxWidth: '75%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  locationIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  locationText: {
+    fontSize: 13,
+    color: theme.text,
+    fontWeight: '500',
+  },
   loadingMask: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.7)',
@@ -242,7 +392,7 @@ const styles = StyleSheet.create({
   },
   hintBar: {
     position: 'absolute',
-    top: 12,
+    top: 52,
     left: 12,
     right: 12,
     backgroundColor: 'rgba(0,0,0,0.6)',

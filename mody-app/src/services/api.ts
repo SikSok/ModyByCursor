@@ -437,6 +437,39 @@ export async function getNearbyDrivers(params: {
   }>>(`/users/nearby-drivers?${q.toString()}`, { method: 'GET' });
 }
 
+/** 乘客端：获取当前用户信息（含上次定位 last_latitude, last_longitude） */
+export async function getUserProfile(token: string) {
+  return request<{
+    id: number;
+    phone: string;
+    name?: string;
+    avatar?: string;
+    status: number;
+    last_latitude?: number | null;
+    last_longitude?: number | null;
+    last_location_updated_at?: string | null;
+  }>('/users/profile', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/** 乘客端：更新当前用户的上次定位 */
+export async function updateUserLastLocation(
+  token: string,
+  payload: { latitude: number; longitude: number }
+) {
+  return request<{
+    last_latitude: number;
+    last_longitude: number;
+    last_location_updated_at: string;
+  }>('/users/me/last-location', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody(payload, 'PUT', '/users/me/last-location'),
+  });
+}
+
 export async function driverRegister(params: {
   phone: string;
   password: string;

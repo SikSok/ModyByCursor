@@ -80,6 +80,30 @@ export class UserController {
     }
   }
 
+  /** 乘客端：更新当前用户的上次定位（鉴权：当前登录用户） */
+  async updateLastLocation(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return sendError(res, '未认证', 401);
+      }
+
+      const latitude = Number(req.body?.latitude);
+      const longitude = Number(req.body?.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return sendError(res, 'latitude、longitude 必须为有效数字', 400);
+      }
+
+      const result = await userService.updateLastLocation(userId, {
+        latitude,
+        longitude
+      });
+      sendSuccess(res, result, '更新成功');
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
   async nearbyDrivers(req: Request, res: Response, next: NextFunction) {
     try {
       const lat = Number(req.query.lat);

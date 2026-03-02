@@ -2,7 +2,7 @@
 
 > 供新开 Agent 快速了解仓库状态、约定与已解决问题，避免重复踩坑。
 
-**最后更新：2026-02-27**
+**最后更新：2026-03-02**
 
 ---
 
@@ -91,7 +91,13 @@
 
 ---
 
-## 8. 新 Agent 使用本文件
+## 8. 近期产品决策（2026-03-02）
+
+- **乘客端定位**：无定位时默认闽清县梅城镇（约 26.2234, 118.8634）；存用户上次定位到 DB，无定位时优先用上次；地图左上角小区域「图标+位置」展示，UI 克制、好看。执行提示词已整理，待另一 Agent 实现（server 需 User 表增 last_latitude/longitude 及更新接口；mody-app 乘客地图页改默认坐标与左上角组件）。
+
+---
+
+## 9. 新 Agent 使用本文件
 
 - 优先读 **README.md** 与本文件，再按需看 `modi-progress.html`、`docs/deploy-server.md`。
 - 改 C 端请求：保留 `api.ts` 中 BlobUtil 的 `default ?? module` 取用；改 API 基址注意 `apiBaseUrl.js` 与 `dev-lan`/`pre`。
