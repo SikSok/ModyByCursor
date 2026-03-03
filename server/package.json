@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "check-password": "ts-node scripts/check-password.ts",
-    "fix-users-keys": "ts-node scripts/fix-users-too-many-keys.ts"
+    "fix-indexes": "ts-node scripts/fix-too-many-keys.ts"
   },
   "keywords": [
     "mody",

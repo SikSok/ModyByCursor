@@ -437,7 +437,7 @@ export async function getNearbyDrivers(params: {
   }>>(`/users/nearby-drivers?${q.toString()}`, { method: 'GET' });
 }
 
-/** 乘客端：获取当前用户信息（含上次定位 last_latitude, last_longitude） */
+/** 乘客端：获取当前用户信息（含上次定位 last_latitude, last_longitude, last_location_name） */
 export async function getUserProfile(token: string) {
   return request<{
     id: number;
@@ -447,6 +447,7 @@ export async function getUserProfile(token: string) {
     status: number;
     last_latitude?: number | null;
     last_longitude?: number | null;
+    last_location_name?: string | null;
     last_location_updated_at?: string | null;
   }>('/users/profile', {
     method: 'GET',
@@ -454,20 +455,50 @@ export async function getUserProfile(token: string) {
   });
 }
 
-/** 乘客端：更新当前用户的上次定位 */
+/** 乘客端：更新当前用户的上次定位（可选 name） */
 export async function updateUserLastLocation(
   token: string,
-  payload: { latitude: number; longitude: number }
+  payload: { latitude: number; longitude: number; name?: string }
 ) {
   return request<{
     last_latitude: number;
     last_longitude: number;
+    last_location_name?: string;
     last_location_updated_at: string;
   }>('/users/me/last-location', {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
     ...jsonBody(payload, 'PUT', '/users/me/last-location'),
   });
+}
+
+/** 乘客端：常用/历史定位列表（最多 4～5 条） */
+export async function getLocationHistory(token: string) {
+  return request<Array<{
+    id: number;
+    latitude: number;
+    longitude: number;
+    name: string;
+    created_at: string;
+  }>>('/users/me/location-history?limit=5', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/** 乘客端：新增一条常用/历史定位（重新定位成功后调用） */
+export async function addLocationHistory(
+  token: string,
+  payload: { latitude: number; longitude: number; name: string }
+) {
+  return request<{ id: number; latitude: number; longitude: number; name: string; created_at: string }>(
+    '/users/me/location-history',
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      ...jsonBody(payload, 'POST', '/users/me/location-history'),
+    }
+  );
 }
 
 export async function driverRegister(params: {

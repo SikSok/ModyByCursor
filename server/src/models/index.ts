@@ -4,8 +4,9 @@
  */
 import Admin from './Admin';
 import User from './User';
+import UserLocationHistory from './UserLocationHistory';
 import Driver from './Driver';
 import DriverLocation from './DriverLocation';
 import VerificationCode from './VerificationCode';
 
-export { Admin, User, Driver, DriverLocation, VerificationCode };
+export { Admin, User, UserLocationHistory, Driver, DriverLocation, VerificationCode };

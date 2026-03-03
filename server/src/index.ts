@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import sequelize from './config/database';
 import './models'; // 加载全部模型，保证 sync 时建表完整
 import { Admin } from './models';
+import { cleanDuplicateIndexes } from './utils/cleanDuplicateIndexes';
 import bcrypt from 'bcryptjs';
 import os from 'os';
 
@@ -37,9 +38,11 @@ const connectDatabase = async () => {
     await sequelize.authenticate();
     const dialect = (sequelize.getDialect && sequelize.getDialect()) || 'database';
     console.log(`✅ 数据库连接成功 (${dialect})`);
-    
+
+    // 先清理重复索引，避免 sync({ alter: true }) 时触发 MySQL「Too many keys; max 64」
+    await cleanDuplicateIndexes(sequelize);
+
     // 同步数据库模型：开发环境始终同步；生产环境也同步（alter: true 只增列/改列，不删表不删数据）
-    // 这样部署后重启服务即可自动补齐新增字段，无需在 MySQL 里手跑 ALTER TABLE
     await sequelize.sync({ alter: true });
     console.log('✅ 数据库模型同步完成');
     

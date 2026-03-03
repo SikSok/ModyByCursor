@@ -10,13 +10,14 @@ interface UserAttributes {
   status: 0 | 1;
   last_latitude?: number | null;
   last_longitude?: number | null;
+  last_location_name?: string | null;
   last_location_updated_at?: Date | null;
   created_at?: Date;
   updated_at?: Date;
 }
 
 interface UserCreationAttributes
-  extends Optional<UserAttributes, 'id' | 'name' | 'avatar' | 'status' | 'last_latitude' | 'last_longitude' | 'last_location_updated_at' | 'created_at' | 'updated_at'> {}
+  extends Optional<UserAttributes, 'id' | 'name' | 'avatar' | 'status' | 'last_latitude' | 'last_longitude' | 'last_location_name' | 'last_location_updated_at' | 'created_at' | 'updated_at'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
@@ -27,6 +28,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public status!: 0 | 1;
   public last_latitude?: number | null;
   public last_longitude?: number | null;
+  public last_location_name?: string | null;
   public last_location_updated_at?: Date | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
@@ -67,6 +69,10 @@ User.init(
     },
     last_longitude: {
       type: DataTypes.DOUBLE,
+      allowNull: true
+    },
+    last_location_name: {
+      type: DataTypes.STRING(100),
       allowNull: true
     },
     last_location_updated_at: {

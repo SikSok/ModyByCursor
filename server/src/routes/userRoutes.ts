@@ -13,6 +13,8 @@ router.get('/nearby-drivers', userController.nearbyDrivers.bind(userController))
 router.get('/profile', authenticateToken, userController.getProfile.bind(userController));
 router.put('/profile', authenticateToken, userController.updateProfile.bind(userController));
 router.put('/me/last-location', authenticateToken, userController.updateLastLocation.bind(userController));
+router.get('/me/location-history', authenticateToken, userController.getLocationHistory.bind(userController));
+router.post('/me/location-history', authenticateToken, userController.addLocationHistory.bind(userController));
 
 export default router;
 

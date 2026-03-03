@@ -80,7 +80,7 @@ export class UserController {
     }
   }
 
-  /** 乘客端：更新当前用户的上次定位（鉴权：当前登录用户） */
+  /** 乘客端：更新当前用户的上次定位（鉴权：当前登录用户；可选 name） */
   async updateLastLocation(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
@@ -93,12 +93,53 @@ export class UserController {
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
         return sendError(res, 'latitude、longitude 必须为有效数字', 400);
       }
+      const name = req.body?.name != null ? String(req.body.name).trim().slice(0, 100) : undefined;
 
       const result = await userService.updateLastLocation(userId, {
         latitude,
-        longitude
+        longitude,
+        ...(name !== undefined && name !== '' && { name })
       });
       sendSuccess(res, result, '更新成功');
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  /** 乘客端：常用/历史定位列表（最多 4～5 条），鉴权 */
+  async getLocationHistory(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return sendError(res, '未认证', 401);
+      }
+      const limit = Math.min(Number(req.query?.limit) || 5, 10);
+      const list = await userService.getLocationHistory(userId, limit);
+      sendSuccess(res, list, '获取成功');
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  /** 乘客端：新增一条常用/历史定位（重新定位成功后调用），鉴权 */
+  async addLocationHistory(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return sendError(res, '未认证', 401);
+      }
+      const latitude = Number(req.body?.latitude);
+      const longitude = Number(req.body?.longitude);
+      const name = req.body?.name != null ? String(req.body.name).trim().slice(0, 100) : '当前位置';
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return sendError(res, 'latitude、longitude 必须为有效数字', 400);
+      }
+      const result = await userService.addLocationHistory(userId, {
+        latitude,
+        longitude,
+        name
+      });
+      sendSuccess(res, result, '添加成功', 201);
     } catch (error: any) {
       next(error);
     }

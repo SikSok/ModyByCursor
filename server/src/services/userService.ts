@@ -1,7 +1,24 @@
 import { Op } from 'sequelize';
 import User from '../models/User';
+import UserLocationHistory from '../models/UserLocationHistory';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../utils/jwt';
+
+const HISTORY_MAX_PER_USER = 20;
+const HISTORY_LIST_LIMIT = 5;
+const DEDUP_KM = 0.5;
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export class UserService {
   async register(phone: string, password: string, name?: string) {
@@ -93,24 +110,95 @@ export class UserService {
     };
   }
 
-  /** 乘客端：更新当前用户的上次定位（节流由调用方控制） */
+  /** 乘客端：更新当前用户的上次定位（可选 name，节流由调用方控制） */
   async updateLastLocation(
     id: number,
-    data: { latitude: number; longitude: number }
+    data: { latitude: number; longitude: number; name?: string }
   ) {
     const user = await User.findByPk(id);
     if (!user) {
       throw new Error('用户不存在');
     }
-    await user.update({
+    const payload: Record<string, unknown> = {
       last_latitude: data.latitude,
       last_longitude: data.longitude,
       last_location_updated_at: new Date()
-    });
+    };
+    if (data.name != null && data.name !== '') {
+      payload.last_location_name = data.name;
+    }
+    await user.update(payload);
     return {
       last_latitude: data.latitude,
       last_longitude: data.longitude,
+      last_location_name: data.name ?? user.last_location_name,
       last_location_updated_at: new Date()
+    };
+  }
+
+  /** 乘客端：常用/历史定位列表，最多返回 HISTORY_LIST_LIMIT 条 */
+  async getLocationHistory(userId: number, limit: number = HISTORY_LIST_LIMIT) {
+    const rows = await UserLocationHistory.findAll({
+      where: { user_id: userId },
+      order: [['created_at', 'DESC']],
+      limit: Math.min(limit, 10),
+      attributes: ['id', 'latitude', 'longitude', 'name', 'created_at']
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      name: r.name,
+      created_at: r.created_at
+    }));
+  }
+
+  /** 乘客端：新增一条常用/历史定位，同名称或距离过近则更新已有记录，单用户保留最近 HISTORY_MAX_PER_USER 条 */
+  async addLocationHistory(
+    userId: number,
+    data: { latitude: number; longitude: number; name: string }
+  ) {
+    const name = String(data.name || '当前位置').trim().slice(0, 100);
+    const lat = data.latitude;
+    const lng = data.longitude;
+
+    const existing = await UserLocationHistory.findAll({
+      where: { user_id: userId },
+      order: [['created_at', 'DESC']]
+    });
+
+    for (const row of existing) {
+      if (row.name === name || haversineKm(lat, lng, row.latitude, row.longitude) < DEDUP_KM) {
+        await row.update({ latitude: lat, longitude: lng, name, created_at: new Date() });
+        return { id: row.id, latitude: lat, longitude: lng, name, created_at: new Date() };
+      }
+    }
+
+    const created = await UserLocationHistory.create({
+      user_id: userId,
+      latitude: lat,
+      longitude: lng,
+      name
+    });
+
+    const count = await UserLocationHistory.count({ where: { user_id: userId } });
+    if (count > HISTORY_MAX_PER_USER) {
+      const toRemove = await UserLocationHistory.findAll({
+        where: { user_id: userId },
+        order: [['created_at', 'ASC']],
+        limit: count - HISTORY_MAX_PER_USER
+      });
+      for (const row of toRemove) {
+        await row.destroy();
+      }
+    }
+
+    return {
+      id: created.id,
+      latitude: created.latitude,
+      longitude: created.longitude,
+      name: created.name,
+      created_at: created.created_at
     };
   }
 
