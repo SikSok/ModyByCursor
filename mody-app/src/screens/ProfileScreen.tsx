@@ -14,37 +14,34 @@ type Props = {
 export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification }: Props) {
   const {
     currentIdentity,
-    userToken,
-    driverToken,
+    token,
+    hasDriver,
+    driverStatus: contextDriverStatus,
     setIdentity,
     logout,
   } = useIdentity();
   const [driverStatus, setDriverStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
 
   useEffect(() => {
-    if (currentIdentity !== 'driver' || !driverToken) {
-      setDriverStatus(null);
+    if (currentIdentity !== 'driver' || !token) {
+      setDriverStatus(contextDriverStatus ?? null);
       return;
     }
-    getDriverProfile(driverToken)
+    getDriverProfile(token)
       .then((res) => {
         if (res?.data?.status) setDriverStatus(res.data.status as 'pending' | 'approved' | 'rejected');
+        else setDriverStatus(contextDriverStatus ?? null);
       })
-      .catch(() => {});
-  }, [currentIdentity, driverToken]);
+      .catch(() => setDriverStatus(contextDriverStatus ?? null));
+  }, [currentIdentity, token, contextDriverStatus]);
 
   const roleLabel = currentIdentity === 'passenger' ? '乘客' : '司机';
   const otherIdentity: Identity = currentIdentity === 'passenger' ? 'driver' : 'passenger';
   const otherLabel = otherIdentity === 'passenger' ? '乘客' : '司机';
-  const hasOtherToken = otherIdentity === 'passenger' ? userToken : driverToken;
 
   function handleSwitchToOther() {
     setIdentity(otherIdentity);
-    if (!hasOtherToken) {
-      onLoginAs(otherIdentity);
-    } else {
-      onSwitchIdentity();
-    }
+    onSwitchIdentity();
   }
 
   return (
@@ -103,7 +100,7 @@ export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification 
             <Text style={styles.cardTitle}>切换身份</Text>
             <Text style={styles.cardHint}>
               切换为{otherLabel}后，主界面将显示{otherLabel}端功能。
-              {!hasOtherToken && ` 当前未以${otherLabel}身份登录，切换后将进入登录页。`}
+              {otherIdentity === 'driver' && !hasDriver && ' 尚未申请司机身份，切换后需先完成认证。'}
             </Text>
           </View>
         </View>

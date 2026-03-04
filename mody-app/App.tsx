@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, Pressable, LogBox } from 'react-native';
 import { IdentityProvider, useIdentity } from './src/context/IdentityContext';
+import { DriverNotificationProvider } from './src/context/DriverNotificationContext';
 import { ToastProvider } from './src/context/ToastContext';
 import { RoleHeader } from './src/components/RoleHeader';
 import { IdentitySelectScreen } from './src/screens/IdentitySelectScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { PassengerHomeScreen } from './src/screens/PassengerHomeScreen';
 import { DriverHomeScreen } from './src/screens/DriverHomeScreen';
+import { NotificationHistoryScreen } from './src/screens/NotificationHistoryScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { DriverVerificationScreen } from './src/screens/DriverVerificationScreen';
 import type { Identity } from './src/context/IdentityContext';
@@ -16,18 +18,18 @@ function AppContent() {
   const {
     ready,
     currentIdentity,
-    userToken,
-    driverToken,
-    setUserToken,
-    setDriverToken,
+    token,
+    setToken,
+    setDriverInfo,
     setIdentity,
   } = useIdentity();
 
   const [loginRole, setLoginRole] = useState<Identity | null>(null);
   const [tab, setTab] = useState<'home' | 'profile'>('home');
   const [showVerification, setShowVerification] = useState(false);
+  const [showDriverNotifications, setShowDriverNotifications] = useState(false);
 
-  const hasAnyToken = !!(userToken || driverToken);
+  const hasAnyToken = !!token;
 
   const openVerification = () => setShowVerification(true);
   const closeVerification = () => setShowVerification(false);
@@ -39,6 +41,20 @@ function AppContent() {
         <RoleHeader role="身份认证" />
         <View style={styles.content}>
           <DriverVerificationScreen onBack={closeVerification} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (ready && hasAnyToken && loginRole === null && currentIdentity === 'driver' && showDriverNotifications && token) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={theme.bg} />
+        <View style={styles.content}>
+          <NotificationHistoryScreen
+            token={token}
+            onBack={() => setShowDriverNotifications(false)}
+          />
         </View>
       </SafeAreaView>
     );
@@ -81,7 +97,10 @@ function AppContent() {
               style={[styles.identityPanelOverlay, currentIdentity !== 'driver' && styles.tabPanelHidden]}
               pointerEvents={currentIdentity === 'driver' ? 'auto' : 'none'}
             >
-              <DriverHomeScreen onOpenVerification={openVerification} />
+              <DriverHomeScreen
+                onOpenVerification={openVerification}
+                onOpenNotifications={() => setShowDriverNotifications(true)}
+              />
             </View>
           </View>
           <View style={[styles.tabPanel, tab !== 'profile' && styles.tabPanelHidden]} pointerEvents={tab === 'profile' ? 'auto' : 'none'}>
@@ -103,9 +122,11 @@ function AppContent() {
         <LoginScreen
           role={loginRole}
           onBack={() => setLoginRole(null)}
-          onSuccess={(userT, driverT) => {
-            setUserToken(userT);
-            setDriverToken(driverT);
+          onSuccess={(authToken, driverInfo) => {
+            setToken(authToken);
+            if (driverInfo) {
+              setDriverInfo(driverInfo.hasDriver, driverInfo.driverStatus ?? null, driverInfo.isAvailable);
+            }
             setLoginRole(null);
             setIdentity(loginRole);
             setTab('home');
@@ -144,7 +165,9 @@ function App(): JSX.Element {
   return (
     <ToastProvider>
       <IdentityProvider>
-        <AppContent />
+        <DriverNotificationProvider>
+          <AppContent />
+        </DriverNotificationProvider>
       </IdentityProvider>
     </ToastProvider>
   );

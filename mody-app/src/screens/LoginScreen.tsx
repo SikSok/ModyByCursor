@@ -26,7 +26,7 @@ const STORAGE_KEY_REMEMBERED_PHONE = '@mody_remembered_phone';
 
 type Props = {
   role: Identity;
-  onSuccess: (userToken: string | null, driverToken: string | null) => void;
+  onSuccess: (token: string | null, driverInfo?: { hasDriver: boolean; driverStatus?: 'pending' | 'approved' | 'rejected'; isAvailable?: boolean }) => void;
   onBack?: () => void;
 };
 
@@ -128,9 +128,19 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
         unifiedLogin({ phone, password }),
         timeoutPromise,
       ]);
-      const data = res.data as { user?: { token: string }; driver?: { token: string } };
+      const data = res.data as {
+        user?: { token: string };
+        hasDriver?: boolean;
+        driverStatus?: 'pending' | 'approved' | 'rejected';
+        isAvailable?: boolean;
+      };
       saveRememberedPhone(phone);
-      onSuccess(data.user?.token ?? null, data.driver?.token ?? null);
+      const token = data.user?.token ?? null;
+      onSuccess(token, {
+        hasDriver: data.hasDriver ?? false,
+        driverStatus: data.driverStatus,
+        isAvailable: data.isAvailable,
+      });
       showToast('登录成功', 'success');
     } catch (e: any) {
       const code = (e as { code?: string }).code;
@@ -161,12 +171,25 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
       if (isPassenger) {
         const res = await userRegister({ phone, password, name, code });
         saveRememberedPhone(phone);
-        onSuccess(res.data.token, null);
+        const data = res.data as { token?: string; user?: { token?: string } };
+        const token = data.token ?? data.user?.token ?? null;
+        onSuccess(token, { hasDriver: false });
         showToast('注册成功', 'success');
       } else {
         const res = await driverRegister({ phone, password, name, code });
         saveRememberedPhone(phone);
-        onSuccess(null, res.data.token);
+        const data = res.data as {
+          user?: { token: string };
+          hasDriver?: boolean;
+          driverStatus?: 'pending' | 'approved' | 'rejected';
+          isAvailable?: boolean;
+        };
+        const token = data.user?.token ?? null;
+        onSuccess(token, {
+          hasDriver: data.hasDriver ?? true,
+          driverStatus: data.driverStatus,
+          isAvailable: data.isAvailable,
+        });
         showToast('注册成功（待审核）', 'success');
       }
     } catch (e: any) {

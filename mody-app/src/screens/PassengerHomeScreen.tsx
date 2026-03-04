@@ -21,6 +21,7 @@ import {
   updateUserLastLocation,
   getLocationHistory,
   addLocationHistory,
+  contactDriver,
   getUserFacingMessage,
 } from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -62,7 +63,7 @@ type LocationHistoryItem = {
 
 function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
   const names = ['张师傅', '李师傅', '王师傅', '刘师傅', '陈师傅'];
-  const phones = ['13800001001', '13800001002', '13800001003', '13800001004', '13800001005'];
+  const phones = ['17710222617', '17710222617', '17710222617', '17710222617', '17710222617'];
   const count = 2 + Math.floor(Math.random() * 4);
   const items: NearbyItem[] = [];
   for (let i = 0; i < count; i++) {
@@ -85,7 +86,7 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
 
 export function PassengerHomeScreen() {
   const { showToast } = useToast();
-  const { userToken } = useIdentity();
+  const { token } = useIdentity();
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
     lat: DEFAULT_LAT,
     lng: DEFAULT_LNG,
@@ -130,15 +131,15 @@ export function PassengerHomeScreen() {
 
   const tryUpdateLastLocation = useCallback(
     (lat: number, lng: number, name?: string) => {
-      if (!userToken) return;
+      if (!token) return;
       const now = Date.now();
       if (now - lastLocationSentAt.current < LAST_LOCATION_THROTTLE_MS) return;
       lastLocationSentAt.current = now;
-      updateUserLastLocation(userToken, { latitude: lat, longitude: lng, name }).catch(() => {
+      updateUserLastLocation(token, { latitude: lat, longitude: lng, name }).catch(() => {
         // 静默失败，不影响使用
       });
     },
-    [userToken]
+    [token]
   );
 
   /** 抽屉内「重新定位」：权限 → getCurrentPosition → 更新地图并关闭抽屉 */
@@ -230,8 +231,8 @@ export function PassengerHomeScreen() {
       setRelocateLoading(false);
       setLoading(true);
       await fetchNearbyWithCenter(lat, lng);
-      if (userToken) {
-        addLocationHistory(userToken, { latitude: lat, longitude: lng, name: placeName }).catch(() => {});
+      if (token) {
+        addLocationHistory(token, { latitude: lat, longitude: lng, name: placeName }).catch(() => {});
       }
       showToast('已更新为当前位置', 'success');
       setLocationSheetVisible(false);
@@ -260,19 +261,19 @@ export function PassengerHomeScreen() {
     } finally {
       setRelocateLoading(false);
     }
-  }, [showToast, userToken, fetchNearbyWithCenter, tryUpdateLastLocation]);
+  }, [showToast, token, fetchNearbyWithCenter, tryUpdateLastLocation]);
 
   /** 打开抽屉时拉取常用/历史定位列表 */
   useEffect(() => {
-    if (!locationSheetVisible || !userToken) return;
-    getLocationHistory(userToken)
+    if (!locationSheetVisible || !token) return;
+    getLocationHistory(token)
       .then((res) => setLocationHistory(Array.isArray(res.data) ? res.data : []))
       .catch(() => setLocationHistory([]));
-  }, [locationSheetVisible, userToken]);
+  }, [locationSheetVisible, token]);
 
   /** 选择「闽清县梅城镇（默认）」 */
   const handleSelectDefault = useCallback(async () => {
-    if (!userToken) {
+    if (!token) {
       setCenter({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
       setLocationLabel(DEFAULT_LABEL);
       if (mapRef.current) {
@@ -296,13 +297,13 @@ export function PassengerHomeScreen() {
     }
     setLoading(true);
     await fetchNearbyWithCenter(DEFAULT_LAT, DEFAULT_LNG);
-    updateUserLastLocation(userToken, {
+    updateUserLastLocation(token, {
       latitude: DEFAULT_LAT,
       longitude: DEFAULT_LNG,
       name: DEFAULT_LABEL,
     }).catch(() => {});
     setLocationSheetVisible(false);
-  }, [userToken, fetchNearbyWithCenter]);
+  }, [token, fetchNearbyWithCenter]);
 
   /** 选择某条历史定位 */
   const handleSelectHistoryItem = useCallback(
@@ -318,12 +319,12 @@ export function PassengerHomeScreen() {
       }
       setLoading(true);
       await fetchNearbyWithCenter(lat, lng);
-      if (userToken) {
-        updateUserLastLocation(userToken, { latitude: lat, longitude: lng, name }).catch(() => {});
+      if (token) {
+        updateUserLastLocation(token, { latitude: lat, longitude: lng, name }).catch(() => {});
       }
       setLocationSheetVisible(false);
     },
-    [userToken, fetchNearbyWithCenter]
+    [token, fetchNearbyWithCenter]
   );
 
   useEffect(() => {
@@ -334,9 +335,9 @@ export function PassengerHomeScreen() {
 
     async function run() {
       // 不自动请求 GPS，仅使用「上次定位」或默认闽清县梅城镇
-      if (userToken) {
+      if (token) {
         try {
-          const res = await getUserProfile(userToken);
+          const res = await getUserProfile(token);
           const data = res.data as any;
           const lastLat = data?.last_latitude;
           const lastLng = data?.last_longitude;
@@ -386,7 +387,7 @@ export function PassengerHomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [userToken, fetchNearbyWithCenter]);
+  }, [token, fetchNearbyWithCenter]);
 
   const cameraPosition: CameraPosition = {
     target: { latitude: center.lat, longitude: center.lng },
@@ -541,9 +542,15 @@ export function PassengerHomeScreen() {
                       styles.callBtn,
                       pressed && styles.callBtnPressed,
                     ]}
-                    onPress={() =>
-                      Linking.openURL('tel:' + selected.driver.phone)
-                    }
+                    onPress={async () => {
+                      if (token) {
+                        contactDriver(token, selected.driver.id).then(
+                          () => showToast('已通知司机', 'success'),
+                          () => {}
+                        );
+                      }
+                      Linking.openURL('tel:' + selected.driver.phone);
+                    }}
                   >
                     <Text style={styles.callBtnText}>拨打电话</Text>
                   </Pressable>

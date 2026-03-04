@@ -16,6 +16,7 @@
 | **官网部署** | 与 server 同仓库、同 Gitee；ECS 已有 Nginx，一次初始化后执行 `mody-website/scripts/deploy.sh` 即可更新。详见 `mody-website/docs/deploy-quick.md`。 |
 | **真机/云端 API** | 真机连本机 server：`npm run dev-lan` 写局域网 IP 到 `apiBaseUrl.js`。连云端：`npm run pre`（admin-web / mody-app 均支持）。 |
 | **C 端请求** | 使用 **react-native-blob-util** 发请求，取用需 `default ?? require(...)`，否则易报 `fetch is not a function`。 |
+| **账号模型** | **单 users 表**：乘客/司机为同一用户的两种身份，司机字段合并入 users（driver_status、is_available 等）；无 drivers 表。登录单 token（user.id），切换身份不重新登录；driver_id 即 user.id。 |
 
 ---
 
@@ -91,9 +92,11 @@
 
 ---
 
-## 8. 近期产品决策（2026-03-02）
+## 8. 近期产品决策与今日完成概要（2026-03-02）
 
-- **乘客端定位**：无定位时默认闽清县梅城镇（约 26.2234, 118.8634）；存用户上次定位到 DB，无定位时优先用上次；地图左上角小区域「图标+位置」展示，UI 克制、好看。执行提示词已整理，待另一 Agent 实现（server 需 User 表增 last_latitude/longitude 及更新接口；mody-app 乘客地图页改默认坐标与左上角组件）。
+- **乘客端定位**：无定位默认闽清县梅城镇；存上次定位到 DB，无定位时优先用上次；App 左上角「图标+位置+右箭头」入口，点击打开定位配置抽屉（重新定位 + 常用/历史，首行固定「闽清县梅城镇（默认）」）；启动时以服务端 last_* 为初始中心，保证再次打开为上次定位。
+- **乘客联系司机通知**：乘客点击拨打电话前调「联系司机」接口；服务端创建通知并经 WebSocket 推送给司机；司机端收推送后调用**系统本地通知 API**（非自绘条幅），需系统通知权限（首次引导、拒绝后约一周再问）；右上角消息图标进历史，未读角标；离线暂存、重连补发 PENDING_LIST。
+- **单用户表重构**：drivers 表已合并入 users，仅保留 users 表；司机字段（driver_status、is_available、证件/车辆等）均在 users，可为 NULL。driver_locations、driver_notifications 的 driver_id 指向 users.id。登录单 token（user.id），乘客/司机接口共用该 token，身份切换不重新登录；管理端司机列表/审核基于 users 的 driver_status。
 
 ---
 
@@ -102,3 +105,4 @@
 - 优先读 **README.md** 与本文件，再按需看 `modi-progress.html`、`docs/deploy-server.md`。
 - 改 C 端请求：保留 `api.ts` 中 BlobUtil 的 `default ?? module` 取用；改 API 基址注意 `apiBaseUrl.js` 与 `dev-lan`/`pre`。
 - 改 server：勿恢复 4xx 的 `Connection: close`；表结构由 `sequelize.sync({ alter: true })` 在启动时同步，模型加字段后部署重启即可。
+- **账号模型**：仅 **users** 表，无 drivers 表/Driver 模型；driver_id 即 user.id（拥有司机身份的用户）；勿恢复 drivers 表或双 token 登录逻辑。

@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import dotenv from 'dotenv';
 import corsMiddleware from './middleware/cors';
 import requestLogger from './middleware/requestLogger';
@@ -10,6 +11,11 @@ import { Admin } from './models';
 import { cleanDuplicateIndexes } from './utils/cleanDuplicateIndexes';
 import bcrypt from 'bcryptjs';
 import os from 'os';
+import WebSocket from 'ws';
+import { verifyToken } from './utils/jwt';
+import * as driverWs from './ws/driverWs';
+import * as driverNotificationService from './services/driverNotificationService';
+import User from './models/User';
 
 // 加载环境变量
 dotenv.config();
@@ -66,13 +72,63 @@ const connectDatabase = async () => {
   }
 };
 
-// 启动服务器（监听所有网卡，方便手机/局域网访问）
+// 启动服务器（HTTP + WebSocket 同端口）
 const startServer = async () => {
   await connectDatabase();
 
+  // 将 notification 推送注入到 service，供 contact-driver 使用
+  driverNotificationService.setPushToDriver((driverId, payload) =>
+    driverWs.sendToDriver(driverId, payload)
+  );
+
+  const httpServer = http.createServer(app);
+  const wss = new WebSocket.Server({ server: httpServer, path: '/ws/driver' });
+
+  wss.on('connection', (ws, req) => {
+    const url = req.url || '';
+    const tokenMatch = url.match(/[?&]token=([^&]+)/);
+    const token = tokenMatch ? decodeURIComponent(tokenMatch[1]) : '';
+    if (!token) {
+      ws.close(4000, 'missing token');
+      return;
+    }
+    let driverId: number;
+    try {
+      const decoded = verifyToken(token);
+      if (decoded.role !== 'driver' && decoded.role !== 'user') {
+        ws.close(4001, 'not driver');
+        return;
+      }
+      driverId = decoded.id;
+    } catch {
+      ws.close(4002, 'invalid token');
+      return;
+    }
+
+    void (async () => {
+      const user = await User.findByPk(driverId, { attributes: ['id', 'driver_status'] });
+      if (!user || user.driver_status == null) {
+        ws.close(4003, 'not a driver account');
+        return;
+      }
+      driverWs.registerDriverWs(driverId, ws);
+      ws.on('close', () => driverWs.unregisterDriverWs(driverId));
+
+      // 补发未推送通知：一次性发 PENDING_LIST，不逐条弹条幅
+      driverNotificationService.getPendingNotifications(driverId).then((list) => {
+        if (list.length === 0) return;
+        const sent = driverWs.sendToDriver(driverId, { type: 'PENDING_LIST', list });
+        if (sent) {
+          driverNotificationService.markNotificationsDelivered(list.map((x) => x.id));
+        }
+      });
+    })();
+  });
+
   const host = '0.0.0.0';
-  app.listen(PORT, host, () => {
+  httpServer.listen(PORT, host, () => {
     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+    console.log(`🔌 司机 WebSocket: ws://localhost:${PORT}/ws/driver?token=...`);
     const nets = os.networkInterfaces();
     for (const name of Object.keys(nets || {})) {
       for (const net of nets[name] || []) {

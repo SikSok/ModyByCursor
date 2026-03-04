@@ -46,9 +46,13 @@ export class UserService {
         phone: user.phone,
         name: user.name,
         avatar: user.avatar,
-        status: user.status
+        status: user.status,
+        token
       },
-      token
+      token,
+      hasDriver: false,
+      driverStatus: undefined,
+      isAvailable: false
     };
   }
 
@@ -78,9 +82,13 @@ export class UserService {
         phone: user.phone,
         name: user.name,
         avatar: user.avatar,
-        status: user.status
+        status: user.status,
+        token
       },
-      token
+      token,
+      hasDriver: user.driver_status != null,
+      driverStatus: user.driver_status ?? undefined,
+      isAvailable: user.is_available ?? false
     };
   }
 

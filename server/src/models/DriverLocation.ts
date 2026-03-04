@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import Driver from './Driver';
+import User from './User';
 
 interface DriverLocationAttributes {
   id: number;
@@ -59,8 +59,7 @@ DriverLocation.init(
   }
 );
 
-DriverLocation.belongsTo(Driver, { foreignKey: 'driver_id' });
-Driver.hasMany(DriverLocation, { foreignKey: 'driver_id' });
+DriverLocation.belongsTo(User, { foreignKey: 'driver_id' });
 
 export default DriverLocation;
 

@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import userRoutes from './userRoutes';
 import driverRoutes from './driverRoutes';
+import passengerRoutes from './passengerRoutes';
 import adminRoutes from './adminRoutes';
 import verificationCodeRoutes from './verificationCodeRoutes';
 import authRoutes from './authRoutes';
 import { getRequestLog } from '../middleware/requestLogger';
 import User from '../models/User';
-import Driver from '../models/Driver';
 import bcrypt from 'bcryptjs';
 
 const router = Router();
@@ -16,7 +16,7 @@ router.get('/debug/requests', (_req, res) => {
   res.json({ success: true, data: getRequestLog() });
 });
 
-// 临时调试：查看某手机号在库中的账号及密码校验情况（仅开发环境）
+// 临时调试：查看某手机号在 users 中的账号及密码校验情况（仅开发环境，单用户表后仅查 users）
 router.get('/debug/password-check', async (req, res) => {
   if (process.env.NODE_ENV !== 'development') {
     return res.status(404).json({ success: false, message: 'Not found' });
@@ -26,35 +26,24 @@ router.get('/debug/password-check', async (req, res) => {
     return res.json({ success: true, data: { error: '请传 phone 参数，如 ?phone=17710222617' } });
   }
   try {
-    const [user, driver] = await Promise.all([
-      User.findOne({ where: { phone }, attributes: ['id', 'phone', 'password_hash', 'status'] }),
-      Driver.findOne({ where: { phone }, attributes: ['id', 'phone', 'password_hash', 'status'] }),
-    ]);
+    const user = await User.findOne({ where: { phone }, attributes: ['id', 'phone', 'password_hash', 'status', 'driver_status'] });
     const testPassword = '123456';
     const result: Record<string, unknown> = {
       phone,
       hasUser: !!user,
-      hasDriver: !!driver,
     };
     if (user) {
       const match = await bcrypt.compare(testPassword, user.password_hash);
       result.user = {
         id: user.id,
         status: user.status,
+        driver_status: user.driver_status,
         passwordHashLength: user.password_hash?.length ?? 0,
         passwordHashPreview: user.password_hash ? `${user.password_hash.slice(0, 7)}...(${user.password_hash.length}字)` : null,
         passwordMatches123456: match,
       };
-    }
-    if (driver) {
-      const match = await bcrypt.compare(testPassword, driver.password_hash);
-      result.driver = {
-        id: driver.id,
-        status: driver.status,
-        passwordHashLength: driver.password_hash?.length ?? 0,
-        passwordHashPreview: driver.password_hash ? `${driver.password_hash.slice(0, 7)}...(${driver.password_hash.length}字)` : null,
-        passwordMatches123456: match,
-      };
+    } else {
+      result.message = '该手机号未在 users 表注册';
     }
     res.json({ success: true, data: result });
   } catch (e: any) {
@@ -65,6 +54,7 @@ router.get('/debug/password-check', async (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/drivers', driverRoutes);
+router.use('/passenger', passengerRoutes);
 router.use('/admins', adminRoutes);
 router.use('/verification-codes', verificationCodeRoutes);
 

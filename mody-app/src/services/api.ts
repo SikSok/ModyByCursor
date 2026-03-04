@@ -378,20 +378,12 @@ export async function sendCode(phone: string, type: 'register' | 'login' | 'rese
 }
 
 export async function unifiedLogin(params: { phone: string; password: string }) {
-  return request<
-    | {
-        user: { token: string; id: number; phone: string; name?: string; avatar?: string } | null;
-        driver: {
-          token: string;
-          id: number;
-          phone: string;
-          name: string;
-          avatar?: string;
-          status: string;
-          is_available: boolean;
-        } | null;
-      }
-  >('/auth/login', { method: 'POST', ...jsonBody(params, 'POST', '/auth/login') });
+  return request<{
+    user: { token: string; id: number; phone: string; name?: string; avatar?: string };
+    hasDriver: boolean;
+    driverStatus?: 'pending' | 'approved' | 'rejected';
+    isAvailable?: boolean;
+  }>('/auth/login', { method: 'POST', ...jsonBody(params, 'POST', '/auth/login') });
 }
 
 export async function resetPassword(params: { phone: string; code: string; new_password: string }) {
@@ -407,7 +399,13 @@ export async function userRegister(params: {
   name?: string;
   code: string;
 }) {
-  return request<{ token: string; user: any }>('/users/register', {
+  return request<{
+    user: { id: number; phone: string; name?: string; avatar?: string; token: string };
+    token: string;
+    hasDriver?: boolean;
+    driverStatus?: 'pending' | 'approved' | 'rejected';
+    isAvailable?: boolean;
+  }>('/users/register', {
     method: 'POST',
     ...jsonBody(params, 'POST', '/users/register'),
   });
@@ -417,6 +415,15 @@ export async function userLogin(params: { phone: string; password: string }) {
   return request<{ token: string; user: any }>('/users/login', {
     method: 'POST',
     ...jsonBody(params, 'POST', '/users/login'),
+  });
+}
+
+/** 乘客端：拨打前通知司机（先调此接口再调起拨号） */
+export async function contactDriver(token: string, driverId: number | string) {
+  return request<{ id: number }>('/passenger/contact-driver', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody({ driverId: typeof driverId === 'string' ? parseInt(driverId, 10) : driverId }, 'POST', '/passenger/contact-driver'),
   });
 }
 
@@ -510,7 +517,12 @@ export async function driverRegister(params: {
   license_plate?: string;
   vehicle_type?: string;
 }) {
-  return request<{ token: string; driver: any }>('/drivers/register', {
+  return request<{
+    user: { id: number; phone: string; name: string; avatar?: string; token: string };
+    hasDriver: boolean;
+    driverStatus?: 'pending' | 'approved' | 'rejected';
+    isAvailable?: boolean;
+  }>('/drivers/register', {
     method: 'POST',
     ...jsonBody(params, 'POST', '/drivers/register'),
   });
@@ -558,6 +570,26 @@ export async function getDriverProfile(token: string) {
     is_available: boolean;
   }>('/drivers/profile', {
     method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/** 司机端：通知列表分页，返回 list 与 unreadCount */
+export async function getDriverNotifications(token: string, page: number = 1, limit: number = 20) {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return request<{
+    list: Array<{ id: number; content: string; created_at: string; read: boolean }>;
+    unreadCount: number;
+  }>(`/drivers/me/notifications?${q.toString()}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/** 司机端：全部标记已读 */
+export async function markDriverNotificationsRead(token: string) {
+  return request<null>('/drivers/me/notifications/read', {
+    method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
   });
 }

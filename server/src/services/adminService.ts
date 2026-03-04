@@ -1,7 +1,7 @@
 import Admin from '../models/Admin';
 import User from '../models/User';
-import Driver from '../models/Driver';
 import bcrypt from 'bcryptjs';
+import { Op } from 'sequelize';
 import { generateToken } from '../utils/jwt';
 
 export class AdminService {
@@ -146,15 +146,15 @@ export class AdminService {
     });
   }
 
-  /** 数据统计面板：用户数、司机数、待审核司机数等 */
+  /** 数据统计面板：用户数、司机数（拥有司机身份的用户）、待审核司机数等 */
   async getStats() {
     const [totalUsers, totalDrivers, driversPending, driversApproved, driversRejected, totalAdmins] =
       await Promise.all([
         User.count(),
-        Driver.count(),
-        Driver.count({ where: { status: 'pending' } }),
-        Driver.count({ where: { status: 'approved' } }),
-        Driver.count({ where: { status: 'rejected' } }),
+        User.count({ where: { driver_status: { [Op.ne]: null } } }),
+        User.count({ where: { driver_status: 'pending' } }),
+        User.count({ where: { driver_status: 'approved' } }),
+        User.count({ where: { driver_status: 'rejected' } }),
         Admin.count()
       ]);
 

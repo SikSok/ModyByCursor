@@ -160,21 +160,21 @@ export class UserController {
 
       const items = await driverLocationService.listApprovedAvailableWithLatestLocation();
       const result = items
-        .map(({ driver, location }) => {
-          const d = haversineKm(lat, lng, Number(location!.latitude), Number(location!.longitude));
+        .map(({ user, location }) => {
+          const d = haversineKm(lat, lng, Number(location.latitude), Number(location.longitude));
           return {
             driver: {
-              id: driver.id,
-              phone: driver.phone,
-              name: driver.name,
-              avatar: driver.avatar,
-              vehicle_type: driver.vehicle_type
+              id: user.id,
+              phone: user.phone,
+              name: user.name,
+              avatar: user.avatar,
+              vehicle_type: user.vehicle_type ?? undefined
             },
             location: {
-              latitude: Number(location!.latitude),
-              longitude: Number(location!.longitude),
-              accuracy: location!.accuracy != null ? Number(location!.accuracy) : null,
-              created_at: location!.created_at
+              latitude: Number(location.latitude),
+              longitude: Number(location.longitude),
+              accuracy: location.accuracy != null ? Number(location.accuracy) : null,
+              created_at: location.created_at
             },
             distance_km: d
           };

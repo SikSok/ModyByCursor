@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt';
+import User from '../models/User';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -31,6 +32,28 @@ export const authenticateToken = (
     req.user = decoded as AuthRequest['user'];
     next();
   });
+};
+
+/** 司机相关接口：要求当前用户已申请司机身份（driver_status 非 NULL） */
+export const requireDriver = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.user?.id) {
+    res.status(401).json({ message: '未认证' });
+    return;
+  }
+  try {
+    const user = await User.findByPk(req.user.id, { attributes: ['id', 'driver_status'] });
+    if (!user || user.driver_status == null) {
+      res.status(403).json({ message: '未申请司机身份' });
+      return;
+    }
+    next();
+  } catch {
+    res.status(500).json({ message: '服务器错误' });
+  }
 };
 
 export const authorizeRoles = (...roles: string[]) => {

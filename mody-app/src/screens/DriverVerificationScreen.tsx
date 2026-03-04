@@ -27,7 +27,7 @@ type Props = {
 };
 
 export function DriverVerificationScreen({ onBack }: Props) {
-  const { driverToken } = useIdentity();
+  const { token } = useIdentity();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -39,13 +39,13 @@ export function DriverVerificationScreen({ onBack }: Props) {
   const [loadFailed, setLoadFailed] = useState(false);
 
   const loadProfile = React.useCallback(() => {
-    if (!driverToken) {
+    if (!token) {
       setLoading(false);
       return;
     }
     setLoadFailed(false);
     setLoading(true);
-    getDriverProfile(driverToken)
+    getDriverProfile(token)
       .then((res) => {
         if (res?.data) {
           setStatus(res.data.status as DriverStatus);
@@ -60,14 +60,14 @@ export function DriverVerificationScreen({ onBack }: Props) {
         showToast('获取资料失败', 'error');
       })
       .finally(() => setLoading(false));
-  }, [driverToken, showToast]);
+  }, [token, showToast]);
 
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
 
   async function handleSubmit() {
-    if (!driverToken) return;
+    if (!token) return;
     const front = idCardFront.trim();
     const back = idCardBack.trim();
     const plate = licensePlate.trim();
@@ -77,7 +77,7 @@ export function DriverVerificationScreen({ onBack }: Props) {
     }
     setSubmitting(true);
     try {
-      const res = await submitVerification(driverToken, {
+      const res = await submitVerification(token, {
         id_card_front: front,
         id_card_back: back,
         license_plate: plate,

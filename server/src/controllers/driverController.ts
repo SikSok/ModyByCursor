@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import driverService from '../services/driverService';
 import verificationCodeService from '../services/verificationCodeService';
 import driverLocationService from '../services/driverLocationService';
+import * as driverNotificationService from '../services/driverNotificationService';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 
@@ -150,6 +151,39 @@ export class DriverController {
       if (e?.message && /必填|不存在/.test(e.message)) {
         return sendError(res, e.message, 400);
       }
+      next(e);
+    }
+  }
+
+  /** 司机端：通知列表分页，带未读数量 */
+  async getNotifications(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const driverId = req.user?.id;
+      if (!driverId) return sendError(res, '未认证', 401);
+
+      const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
+      const limit = Math.min(20, Math.max(1, parseInt(String(req.query.limit), 10) || 20));
+
+      const result = await driverNotificationService.getDriverNotifications(
+        driverId,
+        page,
+        limit
+      );
+      sendSuccess(res, result, '获取成功');
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  /** 司机端：全部标记已读 */
+  async markNotificationsRead(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const driverId = req.user?.id;
+      if (!driverId) return sendError(res, '未认证', 401);
+
+      await driverNotificationService.markDriverNotificationsRead(driverId);
+      sendSuccess(res, null, '已标记已读');
+    } catch (e) {
       next(e);
     }
   }

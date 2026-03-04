@@ -1,21 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { reportLocation, setAvailability, getDriverProfile, getUserFacingMessage } from '../services/api';
+import { reportLocation, setAvailability, getDriverProfile, getDriverNotifications, getUserFacingMessage } from '../services/api';
 import { useIdentity } from '../context/IdentityContext';
 import { useToast } from '../context/ToastContext';
+import { useDriverNotifications } from '../context/DriverNotificationContext';
 import { theme } from '../theme';
 import { DriverTutorial } from '../components/DriverTutorial';
+import { DriverNotificationPermissionModal, shouldShowNotificationPermissionModal } from '../components/DriverNotificationPermissionModal';
 
 const STORAGE_KEY_TUTORIAL_DONE = '@mody_driver_tutorial_done';
 
 type Props = {
   onOpenVerification?: () => void;
+  onOpenNotifications?: () => void;
 };
 
-export function DriverHomeScreen({ onOpenVerification }: Props) {
-  const { driverToken } = useIdentity();
+export function DriverHomeScreen({ onOpenVerification, onOpenNotifications }: Props) {
+  const { token } = useIdentity();
   const { showToast } = useToast();
+  const { unreadCount, pendingCount, clearPendingSummary, setUnreadCount } = useDriverNotifications();
+  const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
   const [tutorialDone, setTutorialDone] = useState<boolean | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -28,7 +33,7 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!driverToken) {
+    if (!token) {
       setTutorialDone(true);
       return;
     }
@@ -41,16 +46,32 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
         setTutorialDone(true);
       }
     })();
-  }, [driverToken]);
+  }, [token]);
 
   useEffect(() => {
-    if (!driverToken) return;
-    getDriverProfile(driverToken)
+    if (!token) return;
+    getDriverProfile(token)
       .then((res) => {
         if (res?.data?.is_available) setIsAvailable(true);
       })
       .catch(() => {});
-  }, [driverToken]);
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    getDriverNotifications(token, 1, 1)
+      .then((res) => {
+        if (res?.data?.unreadCount != null) setUnreadCount(res.data.unreadCount);
+      })
+      .catch(() => {});
+  }, [token, setUnreadCount]);
+
+  useEffect(() => {
+    if (!token) return;
+    shouldShowNotificationPermissionModal().then((show) => {
+      if (show) setShowNotificationPermissionModal(true);
+    });
+  }, [token]);
 
   const handleTutorialComplete = useCallback(() => {
     setShowTutorial(false);
@@ -65,11 +86,11 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
   }, [markTutorialDone]);
 
   async function onToggleAvailable() {
-    if (!driverToken) return;
+    if (!token) return;
     setShowNotVerifiedModal(false);
     try {
       const next = !isAvailable;
-      await setAvailability(driverToken, next);
+      await setAvailability(token, next);
       setIsAvailable(next);
     } catch (e: any) {
       if ((e as any)?.code === 'DRIVER_NOT_VERIFIED') {
@@ -81,9 +102,9 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
   }
 
   async function onReportMockLocation() {
-    if (!driverToken) return;
+    if (!token) return;
     try {
-      await reportLocation(driverToken, {
+      await reportLocation(token, {
         latitude: 31.2304,
         longitude: 121.4737,
         accuracy: 15,
@@ -100,6 +121,23 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
         onComplete={handleTutorialComplete}
         onSkip={handleTutorialSkip}
       />
+      <DriverNotificationPermissionModal
+        visible={showNotificationPermissionModal}
+        onClose={() => setShowNotificationPermissionModal(false)}
+      />
+      {pendingCount > 0 && (
+        <Pressable
+          style={styles.pendingBar}
+          onPress={() => {
+            clearPendingSummary();
+            onOpenNotifications?.();
+          }}
+        >
+          <Text style={styles.pendingBarText}>
+            您有 {pendingCount} 条未读通知，点击查看
+          </Text>
+        </Pressable>
+      )}
       <Modal
         visible={showAuthPromptAfterTutorial}
         transparent
@@ -169,15 +207,31 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
           <View style={styles.cardHeaderText}>
             <Text style={styles.cardTitle}>接客与定位</Text>
             <Text style={styles.cardHint}>
-              {driverToken ? '已登录' : '未登录'}
+              {token ? '已登录' : '未登录'}
             </Text>
           </View>
+          {token ? (
+            <Pressable
+              onPress={onOpenNotifications}
+              style={styles.msgIconWrap}
+              hitSlop={8}
+            >
+              <Text style={styles.msgIcon}>💬</Text>
+              {unreadCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
         </View>
         <View style={styles.cardBody}>
           <Pressable
             onPress={onToggleAvailable}
-            style={[styles.btn, !driverToken && styles.btnDisabled]}
-            disabled={!driverToken}
+            style={[styles.btn, !token && styles.btnDisabled]}
+            disabled={!token}
           >
             <Text style={styles.btnIcon}>{isAvailable ? '🔴' : '🟢'}</Text>
             <Text style={styles.btnText}>
@@ -186,8 +240,8 @@ export function DriverHomeScreen({ onOpenVerification }: Props) {
           </Pressable>
           <Pressable
             onPress={onReportMockLocation}
-            style={[styles.btnOutline, !driverToken && styles.btnDisabled]}
-            disabled={!driverToken}
+            style={[styles.btnOutline, !token && styles.btnDisabled]}
+            disabled={!token}
           >
             <Text style={styles.btnOutlineIcon}>📍</Text>
             <Text style={styles.btnOutlineText}>上报定位（示例）</Text>
@@ -310,4 +364,41 @@ const styles = StyleSheet.create({
     backgroundColor: theme.accent,
   },
   modalBtnPrimaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  pendingBar: {
+    backgroundColor: theme.accentSoft,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.borderLight,
+  },
+  pendingBarText: {
+    fontSize: 14,
+    color: theme.accent,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  msgIconWrap: {
+    position: 'relative',
+    padding: 8,
+  },
+  msgIcon: {
+    fontSize: 22,
+  },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#e74c3c',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+  },
 });

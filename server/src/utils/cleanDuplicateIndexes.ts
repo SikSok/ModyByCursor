@@ -4,7 +4,7 @@
  */
 import { Sequelize, QueryTypes } from 'sequelize';
 
-const TABLES = ['users', 'drivers', 'admins', 'verification_codes'];
+const TABLES = ['users', 'admins', 'verification_codes', 'driver_locations', 'driver_notifications'];
 
 interface IndexRow {
   Key_name: string;
