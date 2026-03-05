@@ -7,7 +7,7 @@ const router = Router();
 router.post(
   '/contact-driver',
   authenticateToken,
-  authorizeRoles('user'),
+  authorizeRoles('user', 'driver'),
   passengerController.contactDriver.bind(passengerController)
 );
 

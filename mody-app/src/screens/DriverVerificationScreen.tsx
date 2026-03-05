@@ -125,7 +125,7 @@ export function DriverVerificationScreen({ onBack }: Props) {
       <Pressable
         style={styles.backBtn}
         onPress={onBack}
-        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+        hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}
       >
         <Text style={styles.backBtnText}>← 返回</Text>
       </Pressable>
@@ -237,8 +237,10 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: 14, color: theme.textMuted },
   backBtn: {
     alignSelf: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 44,
+    justifyContent: 'center',
     marginBottom: 16,
   },
   backBtnText: { fontSize: 16, color: theme.accent, fontWeight: '600' },

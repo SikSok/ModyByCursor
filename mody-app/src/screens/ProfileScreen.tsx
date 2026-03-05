@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIdentity } from '../context/IdentityContext';
 import type { Identity } from '../context/IdentityContext';
 import { getDriverProfile } from '../services/api';
 import { theme } from '../theme';
+import { STORAGE_KEY_PAYMENT_QR_URI } from '../constants/storageKeys';
 
 type Props = {
   onSwitchIdentity: () => void;
@@ -11,7 +13,7 @@ type Props = {
   onOpenVerification?: () => void;
 };
 
-export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification }: Props) {
+export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification }: Props) {
   const {
     currentIdentity,
     token,
@@ -21,6 +23,7 @@ export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification 
     logout,
   } = useIdentity();
   const [driverStatus, setDriverStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+  const [paymentQrUri, setPaymentQrUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentIdentity !== 'driver' || !token) {
@@ -34,6 +37,26 @@ export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification 
       })
       .catch(() => setDriverStatus(contextDriverStatus ?? null));
   }, [currentIdentity, token, contextDriverStatus]);
+
+  useEffect(() => {
+    if (currentIdentity !== 'driver') return;
+    AsyncStorage.getItem(STORAGE_KEY_PAYMENT_QR_URI).then((uri) => setPaymentQrUri(uri || null)).catch(() => setPaymentQrUri(null));
+  }, [currentIdentity]);
+
+  const handleSetPaymentQR = async () => {
+    try {
+      const { launchImageLibrary } = require('react-native-image-picker');
+      const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
+      if (result.didCancel || !result?.assets?.length) return;
+      const uri = result.assets[0].uri;
+      if (uri) {
+        await AsyncStorage.setItem(STORAGE_KEY_PAYMENT_QR_URI, uri);
+        setPaymentQrUri(uri);
+      }
+    } catch (e) {
+      Alert.alert('提示', '选择图片需要安装 react-native-image-picker，请先执行 npm install 并重新编译。');
+    }
+  };
 
   const roleLabel = currentIdentity === 'passenger' ? '乘客' : '司机';
   const otherIdentity: Identity = currentIdentity === 'passenger' ? 'driver' : 'passenger';
@@ -91,6 +114,38 @@ export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification 
         </View>
       )}
 
+      {currentIdentity === 'driver' && (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIcon, styles.cardIconPayment]}>
+              <Text style={styles.cardIconText}>💳</Text>
+            </View>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.cardTitle}>收款码</Text>
+              <Text style={styles.cardHint}>
+                {paymentQrUri ? '已设置，首页可点击出示' : '设置后乘客扫码付款'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.cardBody}>
+            {paymentQrUri ? (
+              <View style={styles.paymentQrPreview}>
+                <Image source={{ uri: paymentQrUri }} style={styles.paymentQrImage} resizeMode="cover" />
+                <Pressable style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]} onPress={handleSetPaymentQR}>
+                  <Text style={styles.btnIcon}>↻</Text>
+                  <Text style={styles.btnText}>更换收款码</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]} onPress={handleSetPaymentQR}>
+                <Text style={styles.btnIcon}>+</Text>
+                <Text style={styles.btnText}>设置收款码</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      )}
+
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={[styles.cardIcon, styles.cardIconSwitch]}>
@@ -118,7 +173,7 @@ export function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification 
       </Pressable>
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -159,11 +214,14 @@ const styles = StyleSheet.create({
   cardIconD: { backgroundColor: theme.greenSoft },
   cardIconSwitch: { backgroundColor: theme.accentSoft },
   cardIconVerify: { backgroundColor: 'rgba(217,119,6,0.15)' },
+  cardIconPayment: { backgroundColor: theme.greenSoft },
   cardHeaderText: { flex: 1 },
   cardTitle: { fontSize: 18, fontWeight: '700', color: theme.text, marginBottom: 4 },
   cardHint: { fontSize: 13, color: theme.textMuted, lineHeight: 20 },
   identityLabel: { fontSize: 16, color: theme.text },
   cardBody: { padding: 20 },
+  paymentQrPreview: { alignItems: 'center', gap: 12 },
+  paymentQrImage: { width: 120, height: 120, borderRadius: theme.borderRadiusSm },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',

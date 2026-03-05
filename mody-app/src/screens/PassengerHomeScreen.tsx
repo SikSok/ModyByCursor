@@ -72,7 +72,7 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
     const distance_km = Math.round((Math.random() * 5 + 0.5) * 10) / 10;
     items.push({
       driver: {
-        id: 9000 + i,
+        id: 1,// 目前自测先写死1 后续根据真实数据赋值
         name: names[i % names.length],
         phone: phones[i % phones.length],
         vehicle_type: '摩托车',
@@ -84,7 +84,7 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
   return items;
 }
 
-export function PassengerHomeScreen() {
+export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   const { showToast } = useToast();
   const { token } = useIdentity();
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
@@ -525,7 +525,7 @@ export function PassengerHomeScreen() {
               <>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>司机信息</Text>
-                  <Pressable onPress={() => setSelected(null)} hitSlop={12}>
+                  <Pressable onPress={() => setSelected(null)} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}>
                     <Text style={styles.modalClose}>关闭</Text>
                   </Pressable>
                 </View>
@@ -564,7 +564,7 @@ export function PassengerHomeScreen() {
       </Modal>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

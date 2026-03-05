@@ -8,7 +8,7 @@ export class PassengerController {
   async contactDriver(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const passengerId = req.user?.id ?? null;
-      if (!req.user || req.user.role !== 'user') {
+      if (!req.user) {
         return sendError(res, '未认证', 401);
       }
 

@@ -125,13 +125,7 @@ export class DriverService {
     if (!user || user.driver_status == null) {
       throw new Error('司机不存在');
     }
-    if (is_available && user.driver_status !== 'approved') {
-      const err = new Error(
-        user.driver_status === 'rejected' ? '已被禁用，请重新认证' : '请先完成身份认证'
-      ) as Error & { code?: string };
-      err.code = 'DRIVER_NOT_VERIFIED';
-      throw err;
-    }
+    // 不强制身份认证即可接单：未认证司机也可设为可接客并在乘客端展示
     await user.update({ is_available });
     return user;
   }

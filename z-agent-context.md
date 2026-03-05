@@ -11,7 +11,6 @@
 | 项 | 说明 |
 |----|------|
 | **主开发目标** | **mody-app**（C 端一体化，乘客/司机身份选择与切换），配合 **server** + **admin-web**。 |
-| **原双端** | **user-app**、**driver-app** 暂保留不删，仅作参考；新功能在 mody-app 实现。 |
 | **Server 部署** | 仅采用 **方案 A**（半自动一键）。国内 ECS 拉 GitHub 易超时，已同时配置 **Gitee** 镜像，ECS 从 Gitee 拉代码部署（2026-02-25）。详见 `docs/deploy-server.md`。 |
 | **官网部署** | 与 server 同仓库、同 Gitee；ECS 已有 Nginx，一次初始化后执行 `mody-website/scripts/deploy.sh` 即可更新。详见 `mody-website/docs/deploy-quick.md`。 |
 | **真机/云端 API** | 真机连本机 server：`npm run dev-lan` 写局域网 IP 到 `apiBaseUrl.js`。连云端：`npm run pre`（admin-web / mody-app 均支持）。 |

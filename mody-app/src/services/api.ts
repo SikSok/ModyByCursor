@@ -211,7 +211,7 @@ async function request<T>(
   console.log(`[API 请求] ${method} ${path} -> ${url}`);
 
   if (blobUtilFetch) {
-    return requestWithBlobUtil<T>(method, url, body, params);
+    return requestWithBlobUtil<T>(method, url, body, options, params);
   }
   return requestWithFetch<T>(method, url, body, options, params);
 }
@@ -221,11 +221,16 @@ function requestWithBlobUtil<T>(
   method: string,
   url: string,
   body: string | undefined,
+  options?: RequestInit & { _params?: unknown },
   params?: unknown
 ): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
   return Promise.race([
     new Promise<ApiResponse<T>>((resolve, reject) => {
-      blobUtilFetch!(method, url, { 'Content-Type': 'application/json' }, body ?? '')
+      blobUtilFetch!(method, url, headers, body ?? '')
         .then((res) => {
           const status = res.info().status;
           let bodyText = '';

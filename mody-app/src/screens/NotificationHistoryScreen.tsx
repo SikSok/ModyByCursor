@@ -4,9 +4,10 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
-  ListRenderItem,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import {
   getDriverNotifications,
@@ -59,7 +60,8 @@ export function NotificationHistoryScreen({ token, onBack }: Props) {
       else setLoadingMore(true);
       try {
         const res = await getDriverNotifications(token, pageNum, 20);
-        const items = (res.data?.list ?? []) as NotificationRow[];
+        const raw = res.data?.list ?? [];
+        const items = Array.isArray(raw) ? [...raw] : [];
         if (append) {
           setList((prev) => [...prev, ...items]);
         } else {
@@ -94,20 +96,31 @@ export function NotificationHistoryScreen({ token, onBack }: Props) {
     loadPage(next, true);
   }, [page, loadPage, loadingMore, hasMore, list.length]);
 
-  const renderItem: ListRenderItem<NotificationRow> = ({ item }) => (
-    <View style={styles.row}>
-      <Text style={styles.rowContent}>{item.content}</Text>
-      <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
-    </View>
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+      const padding = 80;
+      if (contentSize.height - layoutMeasurement.height - contentOffset.y < padding) {
+        loadMore();
+      }
+    },
+    [loadMore]
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={onBack} hitSlop={12} style={styles.backBtn}>
+        <Pressable
+          onPress={onBack}
+          style={styles.backArea}
+          hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}
+        >
           <Text style={styles.backText}>← 返回</Text>
         </Pressable>
-        <Text style={styles.title}>通知历史</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          通知历史
+        </Text>
+        <View style={styles.headerRight} />
       </View>
       {loading ? (
         <View style={styles.center}>
@@ -115,27 +128,37 @@ export function NotificationHistoryScreen({ token, onBack }: Props) {
         </View>
       ) : list.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyIcon}>📬</Text>
+          <View style={styles.emptyIconWrap}>
+            <Text style={styles.emptyIcon}>📬</Text>
+          </View>
+          <Text style={styles.emptyTitle}>暂无通知</Text>
           <Text style={styles.emptyText}>
-            暂无通知，乘客通过平台联系您时会在这里显示
+            乘客通过平台联系您时，会在这里显示
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={list}
-          renderItem={renderItem}
-          keyExtractor={(item) => String(item.id)}
+        <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={styles.listContent}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footer}>
-                <ActivityIndicator size="small" color={theme.accent} />
+          onScroll={handleScroll}
+          scrollEventThrottle={200}
+          showsVerticalScrollIndicator={false}
+        >
+          {list.map((item) => (
+            <View key={item.id} style={styles.row}>
+              <View style={styles.rowDot} />
+              <View style={styles.rowBody}>
+                <Text style={styles.rowContent}>{item.content}</Text>
+                <Text style={styles.rowTime}>{formatRelativeTime(item.created_at)}</Text>
               </View>
-            ) : null
-          }
-        />
+            </View>
+          ))}
+          {loadingMore ? (
+            <View style={styles.footer}>
+              <ActivityIndicator size="small" color={theme.accent} />
+            </View>
+          ) : null}
+        </ScrollView>
       )}
     </View>
   );
@@ -149,15 +172,19 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.border,
     backgroundColor: theme.surface,
   },
-  backBtn: {
-    paddingVertical: 8,
-    paddingRight: 12,
+  /** 左侧整块可点返回，不与标题重叠，避免 Android 上点击被拦截 */
+  backArea: {
+    minWidth: 120,
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingRight: 16,
   },
   backText: {
     fontSize: 16,
@@ -165,25 +192,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
+    flex: 1,
     fontSize: 18,
     fontWeight: '700',
     color: theme.text,
+    textAlign: 'center',
+  },
+  headerRight: {
+    minWidth: 120,
   },
   listContent: {
     padding: 16,
     paddingBottom: 40,
   },
+  scrollView: {
+    flex: 1,
+  },
   row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     backgroundColor: theme.surface,
     padding: 16,
     borderRadius: theme.borderRadiusSm,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: theme.borderLight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  rowDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.accent,
+    marginTop: 6,
+    marginRight: 12,
+  },
+  rowBody: {
+    flex: 1,
   },
   rowContent: {
     fontSize: 15,
     color: theme.text,
+    lineHeight: 22,
     marginBottom: 6,
   },
   rowTime: {
@@ -196,14 +250,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  emptyIcon: {
-    fontSize: 48,
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: theme.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
+  },
+  emptyIcon: {
+    fontSize: 36,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.text,
+    marginBottom: 8,
   },
   emptyText: {
     fontSize: 15,
     color: theme.textMuted,
     textAlign: 'center',
+    lineHeight: 22,
   },
   footer: {
     paddingVertical: 16,

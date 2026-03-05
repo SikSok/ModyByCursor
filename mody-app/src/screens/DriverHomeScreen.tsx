@@ -1,35 +1,97 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Modal,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { reportLocation, setAvailability, getDriverProfile, getDriverNotifications, getUserFacingMessage } from '../services/api';
+import Geolocation from '@react-native-community/geolocation';
+import {
+  reportLocation,
+  setAvailability,
+  getDriverProfile,
+  getDriverNotifications,
+  getUserFacingMessage,
+} from '../services/api';
 import { useIdentity } from '../context/IdentityContext';
+import type { Identity } from '../context/IdentityContext';
 import { useToast } from '../context/ToastContext';
 import { useDriverNotifications } from '../context/DriverNotificationContext';
 import { theme } from '../theme';
 import { DriverTutorial } from '../components/DriverTutorial';
-import { DriverNotificationPermissionModal, shouldShowNotificationPermissionModal } from '../components/DriverNotificationPermissionModal';
+import {
+  DriverNotificationPermissionModal,
+  shouldShowNotificationPermissionModal,
+} from '../components/DriverNotificationPermissionModal';
+import { STORAGE_KEY_PAYMENT_QR_URI } from '../constants/storageKeys';
+import { fetchWeather } from '../utils/weather';
 
 const STORAGE_KEY_TUTORIAL_DONE = '@mody_driver_tutorial_done';
 
+/** 闽清县梅城镇默认坐标（无定位时天气与占位） */
+const DEFAULT_LAT = 26.2234;
+const DEFAULT_LNG = 118.8634;
+
+/** 天气刷新间隔（毫秒） */
+const WEATHER_REFRESH_MS = 30 * 60 * 1000;
+/** 接单状态下定位上报间隔（毫秒） */
+const LOCATION_REPORT_INTERVAL_MS = 45 * 1000;
+
 type Props = {
+  currentIdentity?: Identity;
   onOpenVerification?: () => void;
   onOpenNotifications?: () => void;
+  onOpenProfile?: () => void;
 };
 
-export function DriverHomeScreen({ onOpenVerification, onOpenNotifications }: Props) {
+function getTimeGreeting(): { timeStr: string; greeting: string } {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  let greeting = '晚上好';
+  if (h >= 5 && h < 12) greeting = '上午好';
+  else if (h >= 12 && h < 18) greeting = '下午好';
+  return { timeStr, greeting };
+}
+
+export const DriverHomeScreen = React.memo(function DriverHomeScreen({
+  currentIdentity = 'driver',
+  onOpenVerification,
+  onOpenNotifications,
+  onOpenProfile,
+}: Props) {
   const { token } = useIdentity();
   const { showToast } = useToast();
   const { unreadCount, pendingCount, clearPendingSummary, setUnreadCount } = useDriverNotifications();
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
   const [tutorialDone, setTutorialDone] = useState<boolean | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showAuthPromptAfterTutorial, setShowAuthPromptAfterTutorial] = useState(false);
-  const [showNotVerifiedModal, setShowNotVerifiedModal] = useState(false);
+  const [timeGreeting, setTimeGreeting] = useState(getTimeGreeting);
+  const [weather, setWeather] = useState<{ temp: number; desc: string } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState(false);
+  const [driverCoords, setDriverCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [paymentQrUri, setPaymentQrUri] = useState<string | null>(null);
+  const [showQrFullscreen, setShowQrFullscreen] = useState(false);
+  const [todayContactCount, setTodayContactCount] = useState<number | null>(null);
+  const reportIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastWeatherFetchRef = useRef<number>(0);
 
   const markTutorialDone = useCallback(async () => {
     await AsyncStorage.setItem(STORAGE_KEY_TUTORIAL_DONE, '1');
     setTutorialDone(true);
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setTimeGreeting(getTimeGreeting()), 60 * 1000);
+    return () => clearInterval(t);
   }, []);
 
   useEffect(() => {
@@ -52,19 +114,19 @@ export function DriverHomeScreen({ onOpenVerification, onOpenNotifications }: Pr
     if (!token) return;
     getDriverProfile(token)
       .then((res) => {
-        if (res?.data?.is_available) setIsAvailable(true);
+        if (res?.data && typeof res.data.is_available === 'boolean') {
+          setIsAvailable(res.data.is_available);
+        }
       })
       .catch(() => {});
   }, [token]);
 
   useEffect(() => {
-    if (!token) return;
-    getDriverNotifications(token, 1, 1)
-      .then((res) => {
-        if (res?.data?.unreadCount != null) setUnreadCount(res.data.unreadCount);
-      })
-      .catch(() => {});
-  }, [token, setUnreadCount]);
+    if (!token || currentIdentity !== 'driver') return;
+    getDriverNotifications(token, 1, 1).then((res) => {
+      if (res?.data?.unreadCount != null) setUnreadCount(res.data.unreadCount);
+    }).catch(() => {});
+  }, [token, currentIdentity, setUnreadCount]);
 
   useEffect(() => {
     if (!token) return;
@@ -73,46 +135,125 @@ export function DriverHomeScreen({ onOpenVerification, onOpenNotifications }: Pr
     });
   }, [token]);
 
+/** 天气请求超时（毫秒），超时或失败时显示「未知」 */
+const WEATHER_TIMEOUT_MS = 10000;
+
+  const loadWeather = useCallback(async (lat: number, lng: number) => {
+    const now = Date.now();
+    if (now - lastWeatherFetchRef.current < WEATHER_REFRESH_MS && weather != null) return;
+    lastWeatherFetchRef.current = now;
+    setWeatherLoading(true);
+    setWeatherError(false);
+    try {
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('weather_timeout')), WEATHER_TIMEOUT_MS)
+      );
+      const result = await Promise.race([fetchWeather(lat, lng), timeoutPromise]);
+      if (result) {
+        setWeather({ temp: result.temp, desc: result.desc });
+      } else {
+        setWeatherError(true);
+      }
+    } catch {
+      setWeatherError(true);
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, [weather]);
+
+  useEffect(() => {
+    if (currentIdentity !== 'driver') return;
+    const lat = driverCoords?.lat ?? DEFAULT_LAT;
+    const lng = driverCoords?.lng ?? DEFAULT_LNG;
+    loadWeather(lat, lng);
+  }, [currentIdentity, driverCoords?.lat, driverCoords?.lng, loadWeather]);
+
+  useEffect(() => {
+    if (currentIdentity !== 'driver' || !token || !isAvailable) return;
+    const authToken = token;
+    let cancelled = false;
+    function requestLocationAndReport() {
+      if (cancelled) return;
+      const opts = { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 };
+      Geolocation.getCurrentPosition(
+        (p) => {
+          if (cancelled) return;
+          const { latitude, longitude } = p.coords;
+          setDriverCoords({ lat: latitude, lng: longitude });
+          reportLocation(authToken, {
+            latitude,
+            longitude,
+            accuracy: p.coords.accuracy ?? 15,
+          }).catch(() => {});
+        },
+        () => {},
+        opts
+      );
+    }
+    requestLocationAndReport();
+    const id = setInterval(requestLocationAndReport, LOCATION_REPORT_INTERVAL_MS);
+    reportIntervalRef.current = id;
+    return () => {
+      cancelled = true;
+      if (reportIntervalRef.current) {
+        clearInterval(reportIntervalRef.current);
+        reportIntervalRef.current = null;
+      }
+    };
+  }, [currentIdentity, token, isAvailable]);
+
+  useEffect(() => {
+    if (currentIdentity !== 'driver') return;
+    (async () => {
+      try {
+        const uri = await AsyncStorage.getItem(STORAGE_KEY_PAYMENT_QR_URI);
+        setPaymentQrUri(uri || null);
+      } catch {
+        setPaymentQrUri(null);
+      }
+    })();
+  }, [currentIdentity]);
+
+  useEffect(() => {
+    if (!token || currentIdentity !== 'driver') return;
+    getDriverNotifications(token, 1, 50)
+      .then((res) => {
+        const list = res?.data?.list ?? [];
+        const today = new Date().toDateString();
+        const count = list.filter((item) => new Date(item.created_at).toDateString() === today).length;
+        setTodayContactCount(count);
+      })
+      .catch(() => setTodayContactCount(0));
+  }, [token, currentIdentity]);
+
   const handleTutorialComplete = useCallback(() => {
     setShowTutorial(false);
     markTutorialDone();
-    setShowAuthPromptAfterTutorial(true);
   }, [markTutorialDone]);
 
   const handleTutorialSkip = useCallback(() => {
     setShowTutorial(false);
     markTutorialDone();
-    setShowAuthPromptAfterTutorial(true);
   }, [markTutorialDone]);
 
-  async function onToggleAvailable() {
+  const onToggleAvailable = useCallback(async () => {
     if (!token) return;
-    setShowNotVerifiedModal(false);
     try {
       const next = !isAvailable;
       await setAvailability(token, next);
       setIsAvailable(next);
     } catch (e: any) {
-      if ((e as any)?.code === 'DRIVER_NOT_VERIFIED') {
-        setShowNotVerifiedModal(true);
-        return;
-      }
       showToast(getUserFacingMessage(e, '更新失败'), 'error');
     }
-  }
+  }, [token, isAvailable, showToast]);
 
-  async function onReportMockLocation() {
-    if (!token) return;
-    try {
-      await reportLocation(token, {
-        latitude: 31.2304,
-        longitude: 121.4737,
-        accuracy: 15,
-      });
-    } catch (e: any) {
-      showToast(getUserFacingMessage(e, '上报失败'), 'error');
+  const openPaymentQR = useCallback(() => {
+    if (paymentQrUri) {
+      setShowQrFullscreen(true);
+    } else {
+      onOpenProfile?.();
     }
-  }
+  }, [paymentQrUri, onOpenProfile]);
 
   return (
     <>
@@ -133,237 +274,207 @@ export function DriverHomeScreen({ onOpenVerification, onOpenNotifications }: Pr
             onOpenNotifications?.();
           }}
         >
-          <Text style={styles.pendingBarText}>
-            您有 {pendingCount} 条未读通知，点击查看
-          </Text>
+          <Text style={styles.pendingBarText}>您有 {pendingCount} 条未读通知，点击查看</Text>
         </Pressable>
       )}
+
       <Modal
-        visible={showAuthPromptAfterTutorial}
+        visible={showQrFullscreen}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowAuthPromptAfterTutorial(false)}
+        onRequestClose={() => setShowQrFullscreen(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>去完成身份认证才能接单</Text>
-            <Text style={styles.modalHint}>完成认证后即可设为可接客。</Text>
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={styles.modalBtnSecondary}
-                onPress={() => setShowAuthPromptAfterTutorial(false)}
-              >
-                <Text style={styles.modalBtnSecondaryText}>暂不，稍后再说</Text>
-              </Pressable>
-              <Pressable
-                style={styles.modalBtnPrimary}
-                onPress={() => {
-                  setShowAuthPromptAfterTutorial(false);
-                  onOpenVerification?.();
-                }}
-              >
-                <Text style={styles.modalBtnPrimaryText}>去认证</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+        <Pressable style={styles.qrFullscreenOverlay} onPress={() => setShowQrFullscreen(false)}>
+          <Pressable style={styles.qrFullscreenContent} onPress={(e) => e.stopPropagation()}>
+            {paymentQrUri ? (
+              <Image source={{ uri: paymentQrUri }} style={styles.qrFullscreenImage} resizeMode="contain" />
+            ) : null}
+            <Text style={styles.qrFullscreenHint}>点击空白处关闭</Text>
+          </Pressable>
+        </Pressable>
       </Modal>
-      <Modal
-        visible={showNotVerifiedModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowNotVerifiedModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>请先完成身份认证</Text>
-            <Text style={styles.modalHint}>未认证司机无法接单，请到个人中心完成身份认证。</Text>
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={styles.modalBtnSecondary}
-                onPress={() => setShowNotVerifiedModal(false)}
-              >
-                <Text style={styles.modalBtnSecondaryText}>稍后</Text>
-              </Pressable>
-              <Pressable
-                style={styles.modalBtnPrimary}
-                onPress={() => {
-                  setShowNotVerifiedModal(false);
-                  onOpenVerification?.();
-                }}
-              >
-                <Text style={styles.modalBtnPrimaryText}>去认证</Text>
-              </Pressable>
-            </View>
-          </View>
+
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.topRow}>
+          <Text style={styles.timeText}>{timeGreeting.timeStr}</Text>
+          <Text style={styles.greetingText}>{timeGreeting.greeting}</Text>
         </View>
-      </Modal>
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={[styles.cardIcon, styles.cardIconDriver]}>
-            <Text style={styles.cardIconText}>🏍️</Text>
-          </View>
-          <View style={styles.cardHeaderText}>
-            <Text style={styles.cardTitle}>接客与定位</Text>
-            <Text style={styles.cardHint}>
-              {token ? '已登录' : '未登录'}
-            </Text>
-          </View>
-          {token ? (
-            <Pressable
-              onPress={onOpenNotifications}
-              style={styles.msgIconWrap}
-              hitSlop={8}
-            >
-              <Text style={styles.msgIcon}>💬</Text>
-              {unreadCount > 0 ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-          ) : null}
-        </View>
-        <View style={styles.cardBody}>
+
+        <View style={styles.mainCard}>
           <Pressable
             onPress={onToggleAvailable}
-            style={[styles.btn, !token && styles.btnDisabled]}
+            style={[styles.mainBtn, isAvailable ? styles.mainBtnActive : styles.mainBtnInactive]}
             disabled={!token}
           >
-            <Text style={styles.btnIcon}>{isAvailable ? '🔴' : '🟢'}</Text>
-            <Text style={styles.btnText}>
-              {isAvailable ? '设为不可接客' : '设为空闲可接客'}
+            <Text style={styles.mainBtnIcon}>{isAvailable ? '🟢' : '🔴'}</Text>
+            <Text style={[styles.mainBtnText, isAvailable ? styles.mainBtnTextActive : styles.mainBtnTextInactive]}>
+              {isAvailable ? '停止接单' : '开始接单'}
             </Text>
           </Pressable>
-          <Pressable
-            onPress={onReportMockLocation}
-            style={[styles.btnOutline, !token && styles.btnDisabled]}
-            disabled={!token}
-          >
-            <Text style={styles.btnOutlineIcon}>📍</Text>
-            <Text style={styles.btnOutlineText}>上报定位（示例）</Text>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusIcon}>{isAvailable ? '👁' : '—'}</Text>
+            <Text style={styles.statusText}>
+              {isAvailable ? '正在接单 · 附近乘客可见' : '已停止接单 · 暂不展示'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.twoCards}>
+          <Pressable style={styles.smallCard} onPress={() => loadWeather(driverCoords?.lat ?? DEFAULT_LAT, driverCoords?.lng ?? DEFAULT_LNG)}>
+            <Text style={styles.smallCardIcon}>🌤</Text>
+            {weatherLoading ? (
+              <ActivityIndicator size="small" color={theme.textMuted} />
+            ) : weatherError || weather == null ? (
+              <Text style={styles.smallCardUnknown}>未知</Text>
+            ) : (
+              <>
+                <Text style={styles.smallCardValue}>{weather.temp}°</Text>
+                <Text style={styles.smallCardLabel}>{weather.desc}</Text>
+              </>
+            )}
+          </Pressable>
+          <Pressable style={styles.smallCard} onPress={openPaymentQR}>
+            <Text style={styles.smallCardIcon}>💳</Text>
+            <Text style={styles.smallCardLabel}>{paymentQrUri ? '点击出示' : '收款码'}</Text>
+            {!paymentQrUri && <Text style={styles.smallCardHint}>去设置</Text>}
           </Pressable>
         </View>
-      </View>
-    </ScrollView>
+
+        {(todayContactCount != null && todayContactCount > 0) && (
+          <View style={styles.tipRow}>
+            <Text style={styles.tipText}>今日 {todayContactCount} 位乘客通过平台联系您</Text>
+          </View>
+        )}
+      </ScrollView>
     </>
   );
-}
+});
+
+/** 司机端字体放大系数，便于中年用户阅读 */
+const DRIVER_FONT_SCALE = 1.2;
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 24,
     backgroundColor: theme.bg,
   },
-  card: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 20,
+  },
+  timeText: {
+    fontSize: Math.round(15 * DRIVER_FONT_SCALE),
+    color: theme.textMuted,
+    fontWeight: '500',
+  },
+  greetingText: {
+    fontSize: Math.round(16 * DRIVER_FONT_SCALE),
+    color: theme.text,
+    fontWeight: '600',
+  },
+  mainCard: {
     backgroundColor: theme.surface,
     borderRadius: theme.borderRadius,
+    padding: 24,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: theme.borderLight,
-    overflow: 'hidden',
-    shadowColor: theme.accent,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-    gap: 14,
   },
-  cardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardIconText: { fontSize: 24 },
-  cardIconDriver: { backgroundColor: theme.greenSoft },
-  cardHeaderText: { flex: 1 },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: theme.text, marginBottom: 4 },
-  cardHint: { fontSize: 12, color: theme.textMuted },
-  cardBody: { padding: 20, gap: 14 },
-  btn: {
+  mainBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: theme.accent,
-    paddingVertical: 14,
-    borderRadius: theme.borderRadiusSm,
-  },
-  btnDisabled: { opacity: 0.4 },
-  btnIcon: { fontSize: 16 },
-  btnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
-  btnOutline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: theme.borderRadiusSm,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface2,
-  },
-  btnOutlineIcon: { fontSize: 16 },
-  btnOutlineText: { color: theme.text, fontWeight: '600', fontSize: 15 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalBox: {
-    backgroundColor: theme.surface,
+    gap: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
     borderRadius: theme.borderRadius,
-    padding: 24,
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 280,
   },
-  modalTitle: {
-    fontSize: 18,
+  mainBtnActive: {
+    backgroundColor: theme.green,
+  },
+  mainBtnInactive: {
+    backgroundColor: theme.accent,
+  },
+  mainBtnIcon: {
+    fontSize: Math.round(20 * DRIVER_FONT_SCALE),
+  },
+  mainBtnText: {
+    fontSize: Math.round(18 * DRIVER_FONT_SCALE),
     fontWeight: '700',
-    color: theme.text,
-    marginBottom: 8,
-    textAlign: 'center',
   },
-  modalHint: {
-    fontSize: 14,
+  mainBtnTextActive: {
+    color: '#fff',
+  },
+  mainBtnTextInactive: {
+    color: '#fff',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 6,
+  },
+  statusIcon: {
+    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
+  },
+  statusText: {
+    fontSize: Math.round(13 * DRIVER_FONT_SCALE),
     color: theme.textMuted,
-    marginBottom: 20,
-    textAlign: 'center',
   },
-  modalButtons: {
+  twoCards: {
     flexDirection: 'row',
     gap: 12,
-    justifyContent: 'center',
+    marginBottom: 12,
   },
-  modalBtnSecondary: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+  smallCard: {
+    flex: 1,
+    backgroundColor: theme.surface,
     borderRadius: theme.borderRadiusSm,
+    padding: 16,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: theme.borderLight,
+    alignItems: 'center',
+    minHeight: 88,
   },
-  modalBtnSecondaryText: { fontSize: 15, fontWeight: '600', color: theme.textMuted },
-  modalBtnPrimary: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: theme.borderRadiusSm,
-    backgroundColor: theme.accent,
+  smallCardIcon: {
+    fontSize: Math.round(24 * DRIVER_FONT_SCALE),
+    marginBottom: 6,
   },
-  modalBtnPrimaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  smallCardValue: {
+    fontSize: Math.round(18 * DRIVER_FONT_SCALE),
+    fontWeight: '700',
+    color: theme.text,
+  },
+  /** 天气获取失败时的「未知」占位，与卡片副文案风格一致 */
+  smallCardUnknown: {
+    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
+    fontWeight: '500',
+    color: theme.textMuted,
+  },
+  smallCardLabel: {
+    fontSize: Math.round(13 * DRIVER_FONT_SCALE),
+    color: theme.textMuted,
+    marginTop: 2,
+  },
+  smallCardHint: {
+    fontSize: Math.round(11 * DRIVER_FONT_SCALE),
+    color: theme.accent,
+    marginTop: 2,
+  },
+  tipRow: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  tipText: {
+    fontSize: Math.round(13 * DRIVER_FONT_SCALE),
+    color: theme.textMuted,
+  },
   pendingBar: {
     backgroundColor: theme.accentSoft,
     paddingVertical: 10,
@@ -372,33 +483,32 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.borderLight,
   },
   pendingBarText: {
-    fontSize: 14,
+    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
     color: theme.accent,
     fontWeight: '600',
     textAlign: 'center',
   },
-  msgIconWrap: {
-    position: 'relative',
-    padding: 8,
-  },
-  msgIcon: {
-    fontSize: 22,
-  },
-  badge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#e74c3c',
+  qrFullscreenOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    padding: 24,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
+  qrFullscreenContent: {
+    width: '100%',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qrFullscreenImage: {
+    width: 280,
+    height: 280,
+    maxWidth: '100%',
+  },
+  qrFullscreenHint: {
+    marginTop: 24,
+    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
+    color: 'rgba(255,255,255,0.8)',
   },
 });

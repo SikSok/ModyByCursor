@@ -245,7 +245,7 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>忘记密码</Text>
-            <Pressable onPress={() => setShowForgotPassword(false)} hitSlop={12}>
+            <Pressable onPress={() => setShowForgotPassword(false)} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}>
               <Text style={styles.modalClose}>✕</Text>
             </Pressable>
           </View>
@@ -310,7 +310,12 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
     <>
       <ScrollView contentContainerStyle={styles.container}>
         {onBack && (
-          <Pressable onPress={onBack} style={styles.backBtn} disabled={loading}>
+          <Pressable
+            onPress={onBack}
+            style={styles.backBtn}
+            disabled={loading}
+            hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}
+          >
             <Text style={styles.backBtnText}>‹ 返回</Text>
           </Pressable>
         )}
@@ -477,7 +482,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.bg,
     paddingBottom: 40,
   },
-  backBtn: { alignSelf: 'flex-start', marginBottom: 16 },
+  backBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 44,
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   backBtnText: { fontSize: 16, color: theme.accent, fontWeight: '600' },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
   roleIcon: {
