@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,10 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  ScrollView,
+  Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AMapSdk, MapView, Marker } from 'react-native-amap3d';
 import type { CameraPosition } from 'react-native-amap3d';
 import Geolocation from '@react-native-community/geolocation';
@@ -29,6 +32,11 @@ import { useIdentity } from '../context/IdentityContext';
 import { theme } from '../theme';
 import { AMAP_KEY } from '../config/amapKey';
 import { reverseGeocode } from '../utils/amapRegeo';
+import { STORAGE_KEY_DEFAULT_DRIVER } from '../constants/storageKeys';
+import { GradientCallButton } from '../components/GradientCallButton';
+
+/** 弹窗内默认头像直接 require，避免跨模块引用在部分 Android 上不解析 */
+const FALLBACK_AVATAR_IMG = require('../assets/default-avatars/default-driver-1.png');
 
 /** 闽清县梅城镇默认坐标（无定位且无上次定位时使用） */
 const DEFAULT_LAT = 26.2234;
@@ -48,10 +56,57 @@ const RELOCATE_GPS_TIMEOUT_MS = 12000;
 const REGEO_TIMEOUT_MS = 8000;
 
 type NearbyItem = {
-  driver: { id: number; phone?: string; name: string; vehicle_type?: string };
+  driver: { id: number; phone?: string; name: string; avatar?: string; vehicle_type?: string };
   location: { latitude: number; longitude: number };
   distance_km: number;
 };
+
+/** 本地存储的默认司机快照 */
+type DefaultDriverSnapshot = {
+  id: number;
+  name: string;
+  phone: string;
+  vehicle_type?: string;
+};
+
+/** 用于底部 CTA 的列表项，可为虚拟（默认司机不在本次结果中） */
+type CTADriverItem = NearbyItem & { isVirtual?: boolean };
+
+/**
+ * 得到用于底部 CTA 的司机列表：默认司机在第一位（若在列表中则提至首位，否则插入虚拟条），其余按 distance_km 升序。
+ * 不限制数量，展示全部附近司机。
+ */
+function getSortedDriversForCTA(
+  drivers: NearbyItem[],
+  defaultDriver: DefaultDriverSnapshot | null
+): CTADriverItem[] {
+  const byDistance = [...drivers].sort((a, b) => a.distance_km - b.distance_km);
+  let list: CTADriverItem[];
+  if (!defaultDriver) {
+    list = byDistance;
+  } else {
+    const idx = byDistance.findIndex((d) => d.driver.id === defaultDriver.id);
+    if (idx >= 0) {
+      const item = byDistance[idx];
+      const rest = byDistance.filter((_, i) => i !== idx);
+      list = [{ ...item } as CTADriverItem, ...rest];
+    } else {
+      const virtual: CTADriverItem = {
+        driver: {
+          id: defaultDriver.id,
+          name: defaultDriver.name,
+          phone: defaultDriver.phone,
+          vehicle_type: defaultDriver.vehicle_type,
+        },
+        location: { latitude: 0, longitude: 0 },
+        distance_km: 0,
+        isVirtual: true,
+      };
+      list = [virtual, ...byDistance];
+    }
+  }
+  return list;
+}
 
 type LocationHistoryItem = {
   id: number;
@@ -93,7 +148,8 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   });
   const [locationLabel, setLocationLabel] = useState<string>(DEFAULT_LABEL);
   const [drivers, setDrivers] = useState<NearbyItem[]>([]);
-  const [selected, setSelected] = useState<NearbyItem | null>(null);
+  const [selected, setSelected] = useState<CTADriverItem | null>(null);
+  const [defaultDriver, setDefaultDriver] = useState<DefaultDriverSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationSheetVisible, setLocationSheetVisible] = useState(false);
   const [relocateLoading, setRelocateLoading] = useState(false);
@@ -102,11 +158,43 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   const lastLocationSentAt = useRef<number>(0);
   const lastRelocateTapAt = useRef<number>(0);
 
+  /** 稳定列表数据引用，且每项为纯对象拷贝，避免 FlatList/VirtualizedList 内部对 data 的 property 操作报错 */
+  const ctaListData = useMemo(() => {
+    const raw = getSortedDriversForCTA(drivers, defaultDriver);
+    return raw.map((item) => ({
+      ...item,
+      driver: { ...item.driver },
+      location: { ...item.location },
+    }));
+  }, [drivers, defaultDriver]);
+
   useEffect(() => {
     const key = Platform.select({ android: AMAP_KEY, ios: AMAP_KEY });
     if (key && key !== 'YOUR_AMAP_KEY') {
       AMapSdk.init(key);
     }
+  }, []);
+
+  /** 从 AsyncStorage 读取默认司机，供排序与 CTA 展示使用 */
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_DEFAULT_DRIVER)
+      .then((raw) => {
+        if (!raw) {
+          setDefaultDriver(null);
+          return;
+        }
+        try {
+          const parsed = JSON.parse(raw) as DefaultDriverSnapshot;
+          if (parsed && typeof parsed.id === 'number' && typeof parsed.name === 'string' && typeof parsed.phone === 'string') {
+            setDefaultDriver(parsed);
+          } else {
+            setDefaultDriver(null);
+          }
+        } catch {
+          setDefaultDriver(null);
+        }
+      })
+      .catch(() => setDefaultDriver(null));
   }, []);
 
   const fetchNearbyWithCenter = useCallback(
@@ -457,6 +545,101 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
         )}
       </View>
 
+      {/* 底部常驻：附近司机 CTA */}
+      <View style={styles.ctaSection}>
+        <View style={styles.ctaHeaderRow}>
+          <Text style={styles.ctaTitle}>附近司机</Text>
+          {defaultDriver ? (
+            <Text style={styles.ctaSubtitle}>默认司机排在最前</Text>
+          ) : null}
+        </View>
+        {loading ? (
+          <View style={styles.ctaLoading}>
+            <ActivityIndicator size="small" color={theme.accent} />
+            <Text style={styles.ctaLoadingText}>加载附近司机…</Text>
+          </View>
+        ) : ctaListData.length === 0 ? (
+          <View style={styles.ctaEmpty}>
+            <Text style={styles.ctaEmptyTitle}>附近暂无司机，换个位置试试</Text>
+            <Text style={styles.ctaEmptyHint}>可尝试重新定位或选择其他地点</Text>
+            <Pressable
+              style={[styles.ctaRelocateBtn, relocateLoading && styles.ctaRelocateBtnDisabled]}
+              onPress={handleRelocateInSheet}
+              disabled={relocateLoading}
+            >
+              {relocateLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.ctaRelocateBtnText}>重新定位</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.ctaListScroll}
+            contentContainerStyle={styles.ctaListContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {ctaListData.map((item) => {
+              const isDefault =
+                defaultDriver && item.driver.id === defaultDriver.id;
+              const canCall = !!item.driver.phone;
+              const avatarSource = item.driver.avatar
+                ? { uri: item.driver.avatar }
+                : FALLBACK_AVATAR_IMG;
+              const itemCopy: CTADriverItem = {
+                ...item,
+                driver: { ...item.driver },
+              };
+              return (
+                <Pressable
+                  key={`cta-${item.driver.id}-${item.isVirtual ? 'v' : 'r'}`}
+                  style={({ pressed }) => [styles.ctaRow, pressed && styles.ctaRowPressed]}
+                  onPress={() => setSelected(itemCopy)}
+                >
+                  <Image source={avatarSource} style={styles.ctaAvatar} />
+                  <View style={styles.ctaRowCenter}>
+                    <View style={styles.ctaCardNameRow}>
+                      <Text style={styles.ctaCardName} numberOfLines={1}>
+                        {item.driver.name}
+                      </Text>
+                      {isDefault ? (
+                        <View style={styles.ctaDefaultTag}>
+                          <Text style={styles.ctaDefaultTagText}>默认</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text style={styles.ctaCardDistance}>
+                      {item.isVirtual ? '当前较远' : `约 ${item.distance_km.toFixed(1)} km`}
+                    </Text>
+                  </View>
+                  <View style={styles.ctaRowRight}>
+                    {canCall ? (
+                      <GradientCallButton
+                        onPress={async () => {
+                          if (token) {
+                            contactDriver(token, item.driver.id).then(
+                              () => showToast('已通知司机', 'success'),
+                              () => {}
+                            );
+                          }
+                          if (item.driver.phone) {
+                            Linking.openURL('tel:' + item.driver.phone);
+                          }
+                        }}
+                        style={styles.ctaCallBtn}
+                      />
+                    ) : (
+                      <Text style={styles.ctaNoPhone}>暂无法拨号</Text>
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+      </View>
+
       {/* 底部抽屉：当前选择 + 说明 + 重新定位 */}
       <Modal
         visible={locationSheetVisible}
@@ -529,34 +712,79 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
                     <Text style={styles.modalClose}>关闭</Text>
                   </Pressable>
                 </View>
-                <Text style={styles.modalName}>{selected.driver.name}</Text>
-                <Text style={styles.modalDistance}>
-                  约 {selected.distance_km.toFixed(1)} km
-                </Text>
-                {selected.driver.vehicle_type ? (
-                  <Text style={styles.modalMeta}>{selected.driver.vehicle_type}</Text>
-                ) : null}
-                {selected.driver.phone ? (
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.callBtn,
-                      pressed && styles.callBtnPressed,
-                    ]}
-                    onPress={async () => {
-                      if (token) {
-                        contactDriver(token, selected.driver.id).then(
-                          () => showToast('已通知司机', 'success'),
-                          () => {}
-                        );
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.modalTopBlock}>
+                    <Image
+                      source={
+                        selected.driver.avatar
+                          ? { uri: selected.driver.avatar }
+                          : FALLBACK_AVATAR_IMG
                       }
-                      Linking.openURL('tel:' + selected.driver.phone);
-                    }}
-                  >
-                    <Text style={styles.callBtnText}>拨打电话</Text>
-                  </Pressable>
-                ) : (
-                  <Text style={styles.noPhone}>暂无法拨号</Text>
-                )}
+                      style={styles.modalAvatar}
+                    />
+                    <Text style={styles.modalName}>{selected.driver.name}</Text>
+                    <Text style={styles.modalDistanceVehicle}>
+                      {selected.isVirtual ? '当前较远' : `约 ${selected.distance_km.toFixed(1)} km`}
+                      {selected.driver.vehicle_type ? ` · ${selected.driver.vehicle_type}` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.modalDefaultBlock}>
+                    {defaultDriver && defaultDriver.id === selected.driver.id ? (
+                      <View style={styles.modalDefaultRow}>
+                        <Text style={styles.modalDefaultLabel}>已设为默认</Text>
+                        <Pressable
+                          style={({ pressed }) => [styles.modalDefaultBtn, pressed && styles.modalDefaultBtnPressed]}
+                          onPress={async () => {
+                            await AsyncStorage.removeItem(STORAGE_KEY_DEFAULT_DRIVER);
+                            setDefaultDriver(null);
+                            showToast('已取消默认司机', 'success');
+                          }}
+                        >
+                          <Text style={styles.modalDefaultBtnText}>取消默认</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable
+                        style={({ pressed }) => [styles.modalDefaultBtn, pressed && styles.modalDefaultBtnPressed]}
+                        onPress={async () => {
+                          const payload = {
+                            id: selected.driver.id,
+                            name: selected.driver.name,
+                            phone: selected.driver.phone || '',
+                          };
+                          await AsyncStorage.setItem(STORAGE_KEY_DEFAULT_DRIVER, JSON.stringify(payload));
+                          setDefaultDriver(payload);
+                          showToast('已设为默认司机，将优先显示在下方', 'success');
+                        }}
+                      >
+                        <Text style={styles.modalDefaultBtnText}>设为默认司机</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </ScrollView>
+                <View style={styles.modalCtaBlock}>
+                  {selected.driver.phone ? (
+                    <GradientCallButton
+                      large
+                      onPress={async () => {
+                        if (token) {
+                          contactDriver(token, selected.driver.id).then(
+                            () => showToast('已通知司机', 'success'),
+                            () => {}
+                          );
+                        }
+                        Linking.openURL('tel:' + selected.driver.phone);
+                      }}
+                      style={styles.modalCallBtn}
+                    />
+                  ) : (
+                    <Text style={styles.noPhone}>暂无法拨号</Text>
+                  )}
+                </View>
               </>
             )}
           </Pressable>
@@ -708,8 +936,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.surface,
     borderTopLeftRadius: theme.borderRadius,
     borderTopRightRadius: theme.borderRadius,
-    padding: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -727,11 +957,45 @@ const styles = StyleSheet.create({
     color: theme.accent,
     fontWeight: '600',
   },
+  modalScroll: {
+    flexGrow: 0,
+    maxHeight: 320,
+  },
+  modalScrollContent: {
+    paddingBottom: 16,
+  },
+  modalTopBlock: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 12,
+    backgroundColor: theme.borderLight,
+  },
   modalName: {
     fontSize: 20,
     fontWeight: '700',
     color: theme.text,
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  modalDistanceVehicle: {
+    fontSize: 14,
+    color: theme.textMuted,
+  },
+  modalDefaultBlock: {
+    backgroundColor: theme.surface2,
+    borderRadius: theme.borderRadiusSm,
+    padding: 14,
+    marginBottom: 20,
+  },
+  modalCtaBlock: {
+    paddingTop: 8,
+  },
+  modalCallBtn: {
+    width: '100%',
   },
   modalDistance: {
     fontSize: 15,
@@ -743,21 +1007,195 @@ const styles = StyleSheet.create({
     color: theme.textMuted,
     marginBottom: 16,
   },
-  callBtn: {
-    backgroundColor: theme.green,
-    paddingVertical: 14,
-    borderRadius: theme.borderRadiusSm,
-    alignItems: 'center',
-  },
-  callBtnPressed: { opacity: 0.9 },
-  callBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
   noPhone: {
     fontSize: 14,
     color: theme.textMuted,
     marginTop: 8,
+  },
+  /* 底部 CTA 区域 */
+  ctaSection: {
+    minHeight: 110,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.border,
+  },
+  ctaHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  ctaTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.text,
+  },
+  ctaSubtitle: {
+    fontSize: 12,
+    color: theme.textMuted,
+  },
+  ctaLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  ctaLoadingText: {
+    fontSize: 14,
+    color: theme.textMuted,
+  },
+  ctaEmpty: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  ctaEmptyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.text,
+    marginBottom: 4,
+  },
+  ctaEmptyHint: {
+    fontSize: 13,
+    color: theme.textMuted,
+    marginBottom: 12,
+  },
+  ctaRelocateBtn: {
+    backgroundColor: theme.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: theme.borderRadiusSm,
+    alignSelf: 'center',
+  },
+  ctaRelocateBtnDisabled: {
+    opacity: 0.7,
+  },
+  ctaRelocateBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ctaListScroll: {
+    maxHeight: 320,
+  },
+  ctaListContent: {
+    paddingVertical: 4,
+    paddingRight: 4,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    backgroundColor: theme.surface2,
+    borderRadius: 8,
+  },
+  ctaRowPressed: {
+    opacity: 0.95,
+  },
+  ctaAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+    backgroundColor: theme.borderLight,
+  },
+  ctaRowCenter: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+  ctaRowRight: {
+    marginLeft: 8,
+    minWidth: 88,
+    alignItems: 'flex-end',
+  },
+  ctaCallBtn: {
+    minHeight: 48,
+    alignSelf: 'stretch',
+  },
+  /* 原 ctaCard 内文案样式复用 */
+  ctaScrollContent: {
+    paddingRight: 12,
+    paddingLeft: 4,
+  },
+  ctaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: 180,
+    height: 60,
+    marginRight: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: theme.surface2,
+    borderRadius: 8,
+  },
+  ctaCardLeft: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+  ctaCardNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  ctaCardName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.text,
+  },
+  ctaDefaultTag: {
+    backgroundColor: theme.accentSoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  ctaDefaultTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.accent,
+  },
+  ctaCardDistance: {
+    fontSize: 12,
+    color: theme.textMuted,
+  },
+  ctaCardRight: {
+    marginLeft: 8,
+  },
+  ctaNoPhone: {
+    fontSize: 12,
+    color: theme.textMuted,
+  },
+  modalDefaultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 12,
+  },
+  modalDefaultLabel: {
+    fontSize: 14,
+    color: theme.textMuted,
+  },
+  modalDefaultBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: theme.borderRadiusSm,
+    backgroundColor: theme.accentSoft,
+    alignSelf: 'flex-start',
+  },
+  modalDefaultBtnPressed: {
+    opacity: 0.9,
+  },
+  modalDefaultBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.accent,
   },
 });

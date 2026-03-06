@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, Pressable, LogBox } from 'react-native';
 import { IdentityProvider, useIdentity } from './src/context/IdentityContext';
+import { FontScaleProvider, useFontScale, scaledFontSize } from './src/context/FontScaleContext';
 import { DriverNotificationProvider, useDriverNotifications } from './src/context/DriverNotificationContext';
 import { ToastProvider } from './src/context/ToastContext';
 import { RoleHeader } from './src/components/RoleHeader';
@@ -25,7 +26,11 @@ function AppContent() {
     setDriverInfo,
     setIdentity,
   } = useIdentity();
+  const { fontScale } = useFontScale();
   const { unreadCount } = useDriverNotifications();
+  const tabTextStyle = { fontSize: scaledFontSize(12, fontScale) };
+  const tabTextActiveStyle = { color: theme.accent };
+  const badgeTextStyle = { fontSize: scaledFontSize(10, fontScale), fontWeight: '700' as const, color: '#fff' };
 
   const [loginRole, setLoginRole] = useState<Identity | null>(null);
   const [tab, setTab] = useState<TabId>('home');
@@ -54,14 +59,12 @@ function AppContent() {
   }
 
   if (ready && hasAnyToken && loginRole === null) {
-    const roleLabel = currentIdentity === 'passenger' ? '乘客' : '司机';
     const showMessagesTab = isDriver;
     const activeTab = showMessagesTab ? tab : (tab === 'messages' ? 'home' : tab);
 
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={theme.bg} />
-        <RoleHeader role={roleLabel} />
         <View style={styles.content}>
           <View style={[styles.tabPanel, activeTab !== 'home' && styles.tabPanelHidden]} pointerEvents={activeTab === 'home' ? 'auto' : 'none'}>
             <View style={styles.identityPanel} pointerEvents={currentIdentity === 'passenger' ? 'auto' : 'none'}>
@@ -108,7 +111,7 @@ function AppContent() {
             android_ripple={null}
           >
             <Text style={styles.tabIcon}>🏠</Text>
-            <Text style={[styles.tabText, activeTab === 'home' && styles.tabTextActive]}>首页</Text>
+            <Text style={[styles.tabText, tabTextStyle, activeTab === 'home' && styles.tabTextActive, activeTab === 'home' && tabTextActiveStyle]}>首页</Text>
           </Pressable>
           {showMessagesTab && (
             <Pressable
@@ -120,11 +123,11 @@ function AppContent() {
                 <Text style={styles.tabIcon}>💬</Text>
                 {unreadCount > 0 && (
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                    <Text style={[styles.badgeText, badgeTextStyle]}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
                   </View>
                 )}
               </View>
-              <Text style={[styles.tabText, activeTab === 'messages' && styles.tabTextActive]}>消息</Text>
+              <Text style={[styles.tabText, tabTextStyle, activeTab === 'messages' && styles.tabTextActive, activeTab === 'messages' && tabTextActiveStyle]}>消息</Text>
             </Pressable>
           )}
           <Pressable
@@ -133,7 +136,7 @@ function AppContent() {
             android_ripple={null}
           >
             <Text style={styles.tabIcon}>👤</Text>
-            <Text style={[styles.tabText, activeTab === 'profile' && styles.tabTextActive]}>我的</Text>
+            <Text style={[styles.tabText, tabTextStyle, activeTab === 'profile' && styles.tabTextActive, activeTab === 'profile' && tabTextActiveStyle]}>我的</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -189,9 +192,11 @@ function App(): JSX.Element {
   return (
     <ToastProvider>
       <IdentityProvider>
-        <DriverNotificationProvider>
-          <AppContent />
-        </DriverNotificationProvider>
+        <FontScaleProvider>
+          <DriverNotificationProvider>
+            <AppContent />
+          </DriverNotificationProvider>
+        </FontScaleProvider>
       </IdentityProvider>
     </ToastProvider>
   );

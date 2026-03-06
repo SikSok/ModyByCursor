@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  Dimensions,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Geolocation from '@react-native-community/geolocation';
@@ -22,6 +24,7 @@ import { useIdentity } from '../context/IdentityContext';
 import type { Identity } from '../context/IdentityContext';
 import { useToast } from '../context/ToastContext';
 import { useDriverNotifications } from '../context/DriverNotificationContext';
+import { useFontScale, scaledFontSize } from '../context/FontScaleContext';
 import { theme } from '../theme';
 import { DriverTutorial } from '../components/DriverTutorial';
 import {
@@ -39,7 +42,7 @@ const DEFAULT_LNG = 118.8634;
 
 /** 天气刷新间隔（毫秒） */
 const WEATHER_REFRESH_MS = 30 * 60 * 1000;
-/** 接单状态下定位上报间隔（毫秒） */
+/** 营业中状态下定位上报间隔（毫秒） */
 const LOCATION_REPORT_INTERVAL_MS = 45 * 1000;
 
 type Props = {
@@ -49,15 +52,30 @@ type Props = {
   onOpenProfile?: () => void;
 };
 
-function getTimeGreeting(): { timeStr: string; greeting: string } {
+function getTimeGreeting(): { timeStr: string; greeting: string; subtitle: string } {
   const now = new Date();
   const h = now.getHours();
   const m = now.getMinutes();
   const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   let greeting = '晚上好';
-  if (h >= 5 && h < 12) greeting = '上午好';
-  else if (h >= 12 && h < 18) greeting = '下午好';
-  return { timeStr, greeting };
+  let subtitle = '收工注意休息';
+  if (h >= 0 && h < 5) {
+    greeting = '早上好';
+    subtitle = '注意安全';
+  } else if (h >= 5 && h < 9) {
+    greeting = '早上好';
+    subtitle = '注意安全';
+  } else if (h >= 9 && h < 12) {
+    greeting = '上午好';
+    subtitle = '路上顺利';
+  } else if (h >= 12 && h < 18) {
+    greeting = '下午好';
+    subtitle = '';
+  } else {
+    greeting = '晚上好';
+    subtitle = '收工注意休息';
+  }
+  return { timeStr, greeting, subtitle };
 }
 
 export const DriverHomeScreen = React.memo(function DriverHomeScreen({
@@ -68,6 +86,7 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
 }: Props) {
   const { token } = useIdentity();
   const { showToast } = useToast();
+  const { fontScale } = useFontScale();
   const { unreadCount, pendingCount, clearPendingSummary, setUnreadCount } = useDriverNotifications();
   const [showNotificationPermissionModal, setShowNotificationPermissionModal] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
@@ -83,6 +102,53 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
   const [todayContactCount, setTodayContactCount] = useState<number | null>(null);
   const reportIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastWeatherFetchRef = useRef<number>(0);
+
+  const winHeight = Dimensions.get('window').height;
+  const greetingHeight = Math.max(winHeight * 0.10, 72);
+  const mainCardHeight = Math.max(Math.min(winHeight * 0.45, 360), 280);
+  const circleSize = Math.min(160, Math.max(120, winHeight * 0.2));
+
+  /** 雷达波纹：仅营业中时 2～3 个圆环，stagger 循环 */
+  const ring1 = useRef(new Animated.Value(0)).current;
+  const ring2 = useRef(new Animated.Value(0)).current;
+  const ring3 = useRef(new Animated.Value(0)).current;
+  const ringAnimsRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (!isAvailable) {
+      ring1.setValue(0);
+      ring2.setValue(0);
+      ring3.setValue(0);
+      if (ringAnimsRef.current) ringAnimsRef.current.stop();
+      return;
+    }
+    const duration = 1800;
+    const runOne = (val: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(val, {
+            toValue: 1,
+            duration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(val, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      );
+    const a1 = runOne(ring1, 0);
+    const a2 = runOne(ring2, 400);
+    const a3 = runOne(ring3, 800);
+    ringAnimsRef.current = Animated.parallel([a1, a2, a3]);
+    ringAnimsRef.current.start();
+    return () => {
+      a1.stop();
+      a2.stop();
+      a3.stop();
+    };
+  }, [isAvailable, ring1, ring2, ring3]);
+
+  /** 仅冷启动/首次进入司机首页时设为营业中，不持久化；后续可替换为渐变 */
+  const hasSetDefaultAvailabilityThisSession = useRef(false);
 
   const markTutorialDone = useCallback(async () => {
     await AsyncStorage.setItem(STORAGE_KEY_TUTORIAL_DONE, '1');
@@ -120,6 +186,15 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
       })
       .catch(() => {});
   }, [token]);
+
+  /** 冷启动或首次进入司机首页时默认设为营业中（不持久化，不覆盖后端已返回的 is_available） */
+  useEffect(() => {
+    if (!token || currentIdentity !== 'driver') return;
+    if (hasSetDefaultAvailabilityThisSession.current) return;
+    hasSetDefaultAvailabilityThisSession.current = true;
+    setAvailability(token, true).catch(() => {});
+    setIsAvailable(true);
+  }, [token, currentIdentity]);
 
   useEffect(() => {
     if (!token || currentIdentity !== 'driver') return;
@@ -255,6 +330,8 @@ const WEATHER_TIMEOUT_MS = 10000;
     }
   }, [paymentQrUri, onOpenProfile]);
 
+  const styles = useMemo(() => createStyles(fontScale), [fontScale]);
+
   return (
     <>
       <DriverTutorial
@@ -295,26 +372,106 @@ const WEATHER_TIMEOUT_MS = 10000;
       </Modal>
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.topRow}>
+        <View style={[styles.greetingBlock, { minHeight: greetingHeight }]}>
           <Text style={styles.timeText}>{timeGreeting.timeStr}</Text>
           <Text style={styles.greetingText}>{timeGreeting.greeting}</Text>
+          {timeGreeting.subtitle ? (
+            <Text style={styles.greetingSubtitle}>{timeGreeting.subtitle}</Text>
+          ) : null}
         </View>
 
-        <View style={styles.mainCard}>
-          <Pressable
-            onPress={onToggleAvailable}
-            style={[styles.mainBtn, isAvailable ? styles.mainBtnActive : styles.mainBtnInactive]}
-            disabled={!token}
-          >
-            <Text style={styles.mainBtnIcon}>{isAvailable ? '🟢' : '🔴'}</Text>
-            <Text style={[styles.mainBtnText, isAvailable ? styles.mainBtnTextActive : styles.mainBtnTextInactive]}>
-              {isAvailable ? '停止接单' : '开始接单'}
-            </Text>
-          </Pressable>
+        <View style={[styles.mainCard, { minHeight: mainCardHeight }]}>
+          <View style={[styles.circleWrap, { width: circleSize + 80, height: circleSize + 80 }]}>
+            {isAvailable && (
+              <>
+                <Animated.View
+                  style={[
+                    styles.radarRing,
+                    {
+                      width: circleSize + 40,
+                      height: circleSize + 40,
+                      borderRadius: (circleSize + 40) / 2,
+                      borderWidth: 2,
+                      borderColor: 'rgba(22, 163, 74, 0.4)',
+                      position: 'absolute',
+                    },
+                    {
+                      opacity: ring1.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+                      transform: [
+                        {
+                          scale: ring1.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.8] }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.radarRing,
+                    {
+                      width: circleSize + 40,
+                      height: circleSize + 40,
+                      borderRadius: (circleSize + 40) / 2,
+                      borderWidth: 2,
+                      borderColor: 'rgba(22, 163, 74, 0.4)',
+                      position: 'absolute',
+                    },
+                    {
+                      opacity: ring2.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+                      transform: [
+                        {
+                          scale: ring2.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.8] }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.radarRing,
+                    {
+                      width: circleSize + 40,
+                      height: circleSize + 40,
+                      borderRadius: (circleSize + 40) / 2,
+                      borderWidth: 2,
+                      borderColor: 'rgba(22, 163, 74, 0.4)',
+                      position: 'absolute',
+                    },
+                    {
+                      opacity: ring3.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+                      transform: [
+                        {
+                          scale: ring3.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.8] }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              </>
+            )}
+            <Pressable
+              onPress={onToggleAvailable}
+              style={[
+                styles.circleBtn,
+                {
+                  width: circleSize,
+                  height: circleSize,
+                  borderRadius: circleSize / 2,
+                },
+                isAvailable ? styles.circleBtnActive : styles.circleBtnInactive,
+              ]}
+              disabled={!token}
+            >
+              <Text style={styles.circleBtnIcon}>{isAvailable ? '🟢' : '⚪'}</Text>
+              <Text style={[styles.circleBtnText, isAvailable ? styles.circleBtnTextActive : styles.circleBtnTextInactive]}>
+                {isAvailable ? '休息' : '开始营业'}
+              </Text>
+            </Pressable>
+          </View>
           <View style={styles.statusRow}>
             <Text style={styles.statusIcon}>{isAvailable ? '👁' : '—'}</Text>
             <Text style={styles.statusText}>
-              {isAvailable ? '正在接单 · 附近乘客可见' : '已停止接单 · 暂不展示'}
+              {isAvailable ? '营业中 · 附近乘客可见' : '休息中 · 暂不展示'}
             </Text>
           </View>
         </View>
@@ -350,165 +507,182 @@ const WEATHER_TIMEOUT_MS = 10000;
   );
 });
 
-/** 司机端字体放大系数，便于中年用户阅读 */
-const DRIVER_FONT_SCALE = 1.2;
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    paddingBottom: 24,
-    backgroundColor: theme.bg,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginBottom: 20,
-  },
-  timeText: {
-    fontSize: Math.round(15 * DRIVER_FONT_SCALE),
-    color: theme.textMuted,
-    fontWeight: '500',
-  },
-  greetingText: {
-    fontSize: Math.round(16 * DRIVER_FONT_SCALE),
-    color: theme.text,
-    fontWeight: '600',
-  },
-  mainCard: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.borderRadius,
-    padding: 24,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: theme.borderLight,
-    alignItems: 'center',
-  },
-  mainBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: theme.borderRadius,
-    width: '100%',
-    maxWidth: 280,
-  },
-  mainBtnActive: {
-    backgroundColor: theme.green,
-  },
-  mainBtnInactive: {
-    backgroundColor: theme.accent,
-  },
-  mainBtnIcon: {
-    fontSize: Math.round(20 * DRIVER_FONT_SCALE),
-  },
-  mainBtnText: {
-    fontSize: Math.round(18 * DRIVER_FONT_SCALE),
-    fontWeight: '700',
-  },
-  mainBtnTextActive: {
-    color: '#fff',
-  },
-  mainBtnTextInactive: {
-    color: '#fff',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 6,
-  },
-  statusIcon: {
-    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
-  },
-  statusText: {
-    fontSize: Math.round(13 * DRIVER_FONT_SCALE),
-    color: theme.textMuted,
-  },
-  twoCards: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  smallCard: {
-    flex: 1,
-    backgroundColor: theme.surface,
-    borderRadius: theme.borderRadiusSm,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.borderLight,
-    alignItems: 'center',
-    minHeight: 88,
-  },
-  smallCardIcon: {
-    fontSize: Math.round(24 * DRIVER_FONT_SCALE),
-    marginBottom: 6,
-  },
-  smallCardValue: {
-    fontSize: Math.round(18 * DRIVER_FONT_SCALE),
-    fontWeight: '700',
-    color: theme.text,
-  },
-  /** 天气获取失败时的「未知」占位，与卡片副文案风格一致 */
-  smallCardUnknown: {
-    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
-    fontWeight: '500',
-    color: theme.textMuted,
-  },
-  smallCardLabel: {
-    fontSize: Math.round(13 * DRIVER_FONT_SCALE),
-    color: theme.textMuted,
-    marginTop: 2,
-  },
-  smallCardHint: {
-    fontSize: Math.round(11 * DRIVER_FONT_SCALE),
-    color: theme.accent,
-    marginTop: 2,
-  },
-  tipRow: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  tipText: {
-    fontSize: Math.round(13 * DRIVER_FONT_SCALE),
-    color: theme.textMuted,
-  },
-  pendingBar: {
-    backgroundColor: theme.accentSoft,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.borderLight,
-  },
-  pendingBarText: {
-    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
-    color: theme.accent,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  qrFullscreenOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  qrFullscreenContent: {
-    width: '100%',
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qrFullscreenImage: {
-    width: 280,
-    height: 280,
-    maxWidth: '100%',
-  },
-  qrFullscreenHint: {
-    marginTop: 24,
-    fontSize: Math.round(14 * DRIVER_FONT_SCALE),
-    color: 'rgba(255,255,255,0.8)',
-  },
-});
+function createStyles(fontScale: number) {
+  return StyleSheet.create({
+    container: {
+      padding: 20,
+      paddingBottom: 24,
+      backgroundColor: theme.bg,
+    },
+    greetingBlock: {
+      justifyContent: 'center',
+      paddingVertical: 16,
+      marginBottom: 20,
+    },
+    timeText: {
+      fontSize: scaledFontSize(30, fontScale),
+      color: theme.textMuted,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    greetingText: {
+      fontSize: scaledFontSize(22, fontScale),
+      color: theme.text,
+      fontWeight: '600',
+    },
+    greetingSubtitle: {
+      fontSize: scaledFontSize(16, fontScale),
+      color: theme.textMuted,
+      marginTop: 6,
+      fontWeight: '500',
+    },
+    mainCard: {
+      backgroundColor: theme.surface,
+      borderRadius: theme.borderRadius,
+      padding: 24,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    circleWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    radarRing: {
+      backgroundColor: 'transparent',
+    },
+    circleBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    circleBtnActive: {
+      backgroundColor: theme.green,
+    },
+    circleBtnInactive: {
+      backgroundColor: '#6b7280',
+    },
+    circleBtnIcon: {
+      fontSize: scaledFontSize(28, fontScale),
+      marginBottom: 4,
+    },
+    circleBtnText: {
+      fontSize: scaledFontSize(16, fontScale),
+      fontWeight: '700',
+    },
+    circleBtnTextActive: {
+      color: '#fff',
+    },
+    circleBtnTextInactive: {
+      color: '#fff',
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 16,
+      gap: 6,
+    },
+    statusIcon: {
+      fontSize: scaledFontSize(14, fontScale),
+    },
+    statusText: {
+      fontSize: scaledFontSize(13, fontScale),
+      color: theme.textMuted,
+    },
+    twoCards: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 12,
+    },
+    smallCard: {
+      flex: 1,
+      backgroundColor: theme.surface,
+      borderRadius: theme.borderRadiusSm,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+      alignItems: 'center',
+      minHeight: 88,
+    },
+    smallCardIcon: {
+      fontSize: scaledFontSize(24, fontScale),
+      marginBottom: 6,
+    },
+    smallCardValue: {
+      fontSize: scaledFontSize(18, fontScale),
+      fontWeight: '700',
+      color: theme.text,
+    },
+    smallCardUnknown: {
+      fontSize: scaledFontSize(14, fontScale),
+      fontWeight: '500',
+      color: theme.textMuted,
+    },
+    smallCardLabel: {
+      fontSize: scaledFontSize(13, fontScale),
+      color: theme.textMuted,
+      marginTop: 2,
+    },
+    smallCardHint: {
+      fontSize: scaledFontSize(11, fontScale),
+      color: theme.accent,
+      marginTop: 2,
+    },
+    tipRow: {
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+    },
+    tipText: {
+      fontSize: scaledFontSize(13, fontScale),
+      color: theme.textMuted,
+    },
+    pendingBar: {
+      backgroundColor: theme.accentSoft,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderLight,
+    },
+    pendingBarText: {
+      fontSize: scaledFontSize(14, fontScale),
+      color: theme.accent,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    qrFullscreenOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.85)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    qrFullscreenContent: {
+      width: '100%',
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    qrFullscreenImage: {
+      width: 280,
+      height: 280,
+      maxWidth: '100%',
+    },
+    qrFullscreenHint: {
+      marginTop: 24,
+      fontSize: scaledFontSize(14, fontScale),
+      color: 'rgba(255,255,255,0.8)',
+    },
+  });
+}

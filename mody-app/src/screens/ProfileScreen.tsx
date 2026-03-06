@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert, Modal, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIdentity } from '../context/IdentityContext';
 import type { Identity } from '../context/IdentityContext';
-import { getDriverProfile } from '../services/api';
+import { useFontScale, FONT_SCALE_LABELS, FONT_SCALE_VALUES, scaledFontSize, type FontScaleLevel } from '../context/FontScaleContext';
+import { getDriverProfile, updateDriverProfile } from '../services/api';
 import { theme } from '../theme';
 import { STORAGE_KEY_PAYMENT_QR_URI } from '../constants/storageKeys';
+import { getDefaultDriverAvatarSource } from '../utils/defaultAvatars';
+import { useToast } from '../context/ToastContext';
+
+const DEFAULT_DRIVER_DISPLAY_NAME = '摩的师傅';
 
 type Props = {
   onSwitchIdentity: () => void;
@@ -22,8 +27,17 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
     setIdentity,
     logout,
   } = useIdentity();
+  const { fontScaleLevel, setFontScaleLevel } = useFontScale();
+  const { showToast } = useToast();
+  const styles = useMemo(() => createStyles(fontScaleLevel), [fontScaleLevel]);
   const [driverStatus, setDriverStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
   const [paymentQrUri, setPaymentQrUri] = useState<string | null>(null);
+  const [driverName, setDriverName] = useState<string>(DEFAULT_DRIVER_DISPLAY_NAME);
+  const [driverAvatar, setDriverAvatar] = useState<string | null>(null);
+  const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [fontScaleModalVisible, setFontScaleModalVisible] = useState(false);
 
   useEffect(() => {
     if (currentIdentity !== 'driver' || !token) {
@@ -34,6 +48,11 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
       .then((res) => {
         if (res?.data?.status) setDriverStatus(res.data.status as 'pending' | 'approved' | 'rejected');
         else setDriverStatus(contextDriverStatus ?? null);
+        const data = res?.data;
+        if (data) {
+          setDriverName(data.name && String(data.name).trim() ? data.name : DEFAULT_DRIVER_DISPLAY_NAME);
+          setDriverAvatar(data.avatar && String(data.avatar).trim() ? data.avatar : null);
+        }
       })
       .catch(() => setDriverStatus(contextDriverStatus ?? null));
   }, [currentIdentity, token, contextDriverStatus]);
@@ -58,6 +77,51 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
     }
   };
 
+  const handleChangeAvatar = async () => {
+    if (!token) return;
+    try {
+      const { launchImageLibrary } = require('react-native-image-picker');
+      const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
+      if (result.didCancel || !result?.assets?.length) return;
+      const uri = result.assets[0].uri;
+      if (!uri) return;
+      setSavingProfile(true);
+      await updateDriverProfile(token, { avatar: uri });
+      setDriverAvatar(uri);
+      showToast('头像已更新', 'success');
+    } catch (e: any) {
+      showToast(e?.message || '更新失败', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const openNicknameEdit = () => {
+    setNicknameInput(driverName === DEFAULT_DRIVER_DISPLAY_NAME ? '' : driverName);
+    setNicknameModalVisible(true);
+  };
+
+  const saveNickname = async () => {
+    const name = nicknameInput.trim() || DEFAULT_DRIVER_DISPLAY_NAME;
+    if (!token) return;
+    setNicknameModalVisible(false);
+    try {
+      setSavingProfile(true);
+      await updateDriverProfile(token, { name });
+      setDriverName(name);
+      showToast('昵称已更新', 'success');
+    } catch (e: any) {
+      showToast(e?.message || '更新失败', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSelectFontScale = async (level: FontScaleLevel) => {
+    await setFontScaleLevel(level);
+    setFontScaleModalVisible(false);
+  };
+
   const roleLabel = currentIdentity === 'passenger' ? '乘客' : '司机';
   const otherIdentity: Identity = currentIdentity === 'passenger' ? 'driver' : 'passenger';
   const otherLabel = otherIdentity === 'passenger' ? '乘客' : '司机';
@@ -69,6 +133,33 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {currentIdentity === 'driver' && (
+        <View style={styles.profileCard}>
+          <Pressable
+            style={styles.avatarWrap}
+            onPress={handleChangeAvatar}
+            disabled={savingProfile}
+          >
+            <Image
+              source={driverAvatar ? { uri: driverAvatar } : getDefaultDriverAvatarSource()}
+              style={styles.profileAvatar}
+            />
+            <Text style={styles.avatarHint}>点击更换头像</Text>
+          </Pressable>
+          <Pressable style={styles.nicknameRow} onPress={openNicknameEdit}>
+            <Text style={styles.nicknameLabel}>昵称</Text>
+            <Text style={styles.nicknameValue} numberOfLines={1}>{driverName}</Text>
+            <Text style={styles.nicknameArrow}>›</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <Pressable style={styles.fontScaleRow} onPress={() => setFontScaleModalVisible(true)}>
+        <Text style={styles.fontScaleLabel}>字号大小</Text>
+        <Text style={styles.fontScaleValue}>{FONT_SCALE_LABELS[fontScaleLevel]}</Text>
+        <Text style={styles.fontScaleArrow}>›</Text>
+      </Pressable>
+
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={[styles.cardIcon, currentIdentity === 'passenger' ? styles.cardIconP : styles.cardIconD]}>
@@ -171,16 +262,223 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
         <Text style={styles.btnOutlineIcon}>🚪</Text>
         <Text style={styles.btnOutlineText}>退出登录</Text>
       </Pressable>
+
+      <Modal
+        visible={nicknameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNicknameModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setNicknameModalVisible(false)}>
+          <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>修改昵称</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={nicknameInput}
+              onChangeText={setNicknameInput}
+              placeholder={DEFAULT_DRIVER_DISPLAY_NAME}
+              placeholderTextColor={theme.textMuted}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <Pressable style={({ pressed }) => [styles.modalBtn, styles.modalBtnCancel, pressed && styles.btnPressed]} onPress={() => setNicknameModalVisible(false)}>
+                <Text style={styles.modalBtnCancelText}>取消</Text>
+              </Pressable>
+              <Pressable style={({ pressed }) => [styles.modalBtn, styles.modalBtnOk, pressed && styles.btnPressed]} onPress={saveNickname}>
+                <Text style={styles.modalBtnOkText}>保存</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={fontScaleModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFontScaleModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setFontScaleModalVisible(false)}>
+          <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>字号大小</Text>
+            {(['small', 'standard', 'large'] as const).map((level) => (
+              <Pressable
+                key={level}
+                style={[styles.fontScaleOption, fontScaleLevel === level && styles.fontScaleOptionActive]}
+                onPress={() => handleSelectFontScale(level)}
+              >
+                <Text style={[styles.fontScaleOptionText, fontScaleLevel === level && styles.fontScaleOptionTextActive]}>
+                  {FONT_SCALE_LABELS[level]}
+                </Text>
+                {fontScaleLevel === level && <Text style={styles.fontScaleOptionCheck}>✓</Text>}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 });
 
-const styles = StyleSheet.create({
+function createStyles(fontScaleLevel: FontScaleLevel) {
+  const fontScale = FONT_SCALE_VALUES[fontScaleLevel];
+  return StyleSheet.create({
   container: {
     padding: 20,
     paddingBottom: 40,
     backgroundColor: theme.bg,
     gap: 16,
+  },
+  profileCard: {
+    backgroundColor: theme.surface,
+    borderRadius: theme.borderRadius,
+    borderWidth: 1,
+    borderColor: theme.borderLight,
+    padding: 20,
+    alignItems: 'center',
+  },
+  avatarWrap: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  profileAvatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: theme.borderLight,
+  },
+  avatarHint: {
+    fontSize: scaledFontSize(13, fontScale),
+    color: theme.textMuted,
+    marginTop: 8,
+  },
+  nicknameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.border,
+  },
+  nicknameLabel: {
+    fontSize: scaledFontSize(15, fontScale),
+    color: theme.textMuted,
+    marginRight: 12,
+  },
+  nicknameValue: {
+    flex: 1,
+    fontSize: scaledFontSize(16, fontScale),
+    fontWeight: '600',
+    color: theme.text,
+  },
+  nicknameArrow: {
+    fontSize: scaledFontSize(18, fontScale),
+    color: theme.textMuted,
+  },
+  fontScaleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.surface,
+    borderRadius: theme.borderRadius,
+    borderWidth: 1,
+    borderColor: theme.borderLight,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  fontScaleLabel: {
+    fontSize: scaledFontSize(16, fontScale),
+    fontWeight: '600',
+    color: theme.text,
+    flex: 1,
+  },
+  fontScaleValue: {
+    fontSize: scaledFontSize(15, fontScale),
+    color: theme.textMuted,
+    marginRight: 8,
+  },
+  fontScaleArrow: {
+    fontSize: scaledFontSize(18, fontScale),
+    color: theme.textMuted,
+  },
+  fontScaleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: theme.borderRadiusSm,
+    marginBottom: 8,
+  },
+  fontScaleOptionActive: {
+    backgroundColor: theme.accentSoft,
+  },
+  fontScaleOptionText: {
+    fontSize: scaledFontSize(16, fontScale),
+    color: theme.text,
+  },
+  fontScaleOptionTextActive: {
+    fontWeight: '700',
+    color: theme.accent,
+  },
+  fontScaleOptionCheck: {
+    fontSize: scaledFontSize(18, fontScale),
+    color: theme.accent,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalBox: {
+    backgroundColor: theme.surface,
+    borderRadius: theme.borderRadius,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: scaledFontSize(18, fontScale),
+    fontWeight: '700',
+    color: theme.text,
+    marginBottom: 16,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: theme.borderRadiusSm,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontSize: scaledFontSize(16, fontScale),
+    color: theme.text,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
+  modalBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: theme.borderRadiusSm,
+  },
+  modalBtnCancel: {
+    backgroundColor: theme.surface2,
+  },
+  modalBtnCancelText: {
+    fontSize: scaledFontSize(15, fontScale),
+    fontWeight: '600',
+    color: theme.textMuted,
+  },
+  modalBtnOk: {
+    backgroundColor: theme.accent,
+  },
+  modalBtnOkText: {
+    fontSize: scaledFontSize(15, fontScale),
+    fontWeight: '700',
+    color: '#fff',
   },
   card: {
     backgroundColor: theme.surface,
@@ -209,16 +507,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardIconText: { fontSize: 24 },
+  cardIconText: { fontSize: scaledFontSize(24, fontScale) },
   cardIconP: { backgroundColor: theme.blueSoft },
   cardIconD: { backgroundColor: theme.greenSoft },
   cardIconSwitch: { backgroundColor: theme.accentSoft },
   cardIconVerify: { backgroundColor: 'rgba(217,119,6,0.15)' },
   cardIconPayment: { backgroundColor: theme.greenSoft },
   cardHeaderText: { flex: 1 },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: theme.text, marginBottom: 4 },
-  cardHint: { fontSize: 13, color: theme.textMuted, lineHeight: 20 },
-  identityLabel: { fontSize: 16, color: theme.text },
+  cardTitle: { fontSize: scaledFontSize(18, fontScale), fontWeight: '700', color: theme.text, marginBottom: 4 },
+  cardHint: { fontSize: scaledFontSize(13, fontScale), color: theme.textMuted, lineHeight: 20 },
+  identityLabel: { fontSize: scaledFontSize(16, fontScale), color: theme.text },
   cardBody: { padding: 20 },
   paymentQrPreview: { alignItems: 'center', gap: 12 },
   paymentQrImage: { width: 120, height: 120, borderRadius: theme.borderRadiusSm },
@@ -232,8 +530,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadiusSm,
   },
   btnPressed: { opacity: 0.9 },
-  btnIcon: { fontSize: 18, color: theme.text },
-  btnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  btnIcon: { fontSize: scaledFontSize(18, fontScale), color: theme.text },
+  btnText: { color: '#ffffff', fontWeight: '700', fontSize: scaledFontSize(15, fontScale) },
   btnOutline: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -245,6 +543,7 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     backgroundColor: theme.surface,
   },
-  btnOutlineIcon: { fontSize: 18 },
-  btnOutlineText: { color: theme.textMuted, fontWeight: '600', fontSize: 15 },
+  btnOutlineIcon: { fontSize: scaledFontSize(18, fontScale) },
+  btnOutlineText: { color: theme.textMuted, fontWeight: '600', fontSize: scaledFontSize(15, fontScale) },
 });
+}

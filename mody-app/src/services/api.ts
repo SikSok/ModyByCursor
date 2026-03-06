@@ -467,6 +467,18 @@ export async function getUserProfile(token: string) {
   });
 }
 
+/** 乘客端：更新用户资料（昵称、头像） */
+export async function updateUserProfile(
+  token: string,
+  payload: { name?: string; avatar?: string }
+) {
+  return request<{ id: number; phone: string; name?: string; avatar?: string }>('/users/profile', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody(payload, 'PUT', '/users/profile'),
+  });
+}
+
 /** 乘客端：更新当前用户的上次定位（可选 name） */
 export async function updateUserLastLocation(
   token: string,
@@ -576,6 +588,18 @@ export async function getDriverProfile(token: string) {
   }>('/drivers/profile', {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+/** 司机端：更新司机资料（昵称、头像） */
+export async function updateDriverProfile(
+  token: string,
+  payload: { name?: string; avatar?: string }
+) {
+  return request<{ id: number; phone: string; name: string; avatar?: string }>('/drivers/profile', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody(payload, 'PUT', '/drivers/profile'),
   });
 }
 

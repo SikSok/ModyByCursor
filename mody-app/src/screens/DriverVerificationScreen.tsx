@@ -86,13 +86,13 @@ export function DriverVerificationScreen({ onBack }: Props) {
       const newStatus = (res?.data as any)?.status as DriverStatus | undefined;
       if (newStatus) setStatus(newStatus);
       if (newStatus === 'approved') {
-        Alert.alert('认证成功', '您已完成身份认证，可以接单了。', [
+        Alert.alert('认证成功', '您已完成身份认证，可以营业了。', [
           { text: '确定', onPress: onBack },
         ]);
       } else if (status === 'rejected') {
         Alert.alert('已提交', '您的认证材料已提交，请等待管理员审核。');
       } else {
-        Alert.alert('认证成功', '您已完成身份认证，可以接单了。', [
+        Alert.alert('认证成功', '您已完成身份认证，可以营业了。', [
           { text: '确定', onPress: onBack },
         ]);
       }
@@ -212,7 +212,7 @@ export function DriverVerificationScreen({ onBack }: Props) {
       )}
 
       {status === 'approved' && (
-        <Text style={styles.approvedHint}>您已通过认证，可正常接单。</Text>
+        <Text style={styles.approvedHint}>您已通过认证，可正常营业。</Text>
       )}
     </ScrollView>
   );
