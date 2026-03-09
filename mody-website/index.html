@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="摩迪 Mody - 个人自研出行工具作品展示与下载">
-    <title>摩迪 Mody - 个人作品展示</title>
+    <meta name="description" content="摩迪 Mody - 附近司机实时可见，一键联系，安全便捷。乘客叫车、司机接单，一款 App 双身份，短途出行更高效。">
+    <title>摩迪 Mody - 连接乘客与摩的的出行工具</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -285,6 +285,16 @@
             font-size: inherit;
         }
         .footer-links a:hover { text-decoration: underline; }
+        .footer-beian {
+            margin-bottom: clamp(8px, 1.5vw, 12px);
+            color: rgba(255,255,255,0.7);
+        }
+        .footer-beian a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+        }
+        .footer-beian a:hover { text-decoration: underline; }
+        .footer-beian a + a { margin-left: 1em; }
         .footer-copy { color: rgba(255,255,255,0.6); }
 
         /* ========== 响应式：平板 / 手机 ========== */
@@ -350,6 +360,7 @@
             <nav class="nav-links">
                 <a href="#product">产品介绍</a>
                 <a href="#download">软件下载</a>
+                <a href="promo.html">推广合作</a>
                 <a href="contact.html">联系</a>
             </nav>
             <button type="button" class="nav-toggle" id="navToggle" aria-label="打开菜单"><span></span></button>
@@ -359,9 +370,9 @@
     <main>
         <section class="hero">
             <div class="hero-inner">
-                <span class="hero-badge">个人作品</span>
+                <span class="hero-badge">短途出行</span>
                 <h1>摩迪 Mody</h1>
-                <p class="hero-desc">个人自研的出行工具 App 与配套展示页，用于作品展示与下载。非经营性个人项目。</p>
+                <p class="hero-desc">附近司机实时可见，一键联系，安全便捷。</p>
                 <div class="hero-img-wrap">
                     <img src="assets/hero.svg" alt="Mody 出行" />
                 </div>
@@ -374,7 +385,7 @@
 
         <section id="product" class="section">
             <h2 class="section-title">产品亮点</h2>
-            <p class="section-desc">一款 App，双身份切换；附近司机实时可见，联系更高效。</p>
+            <p class="section-desc">一款 App 双身份，乘客叫车、司机接单；附近司机实时可见，联系更高效。</p>
             <div class="features">
                 <div class="feature-card">
                     <img src="assets/feature-nearby.svg" alt="附近司机" />
@@ -384,7 +395,7 @@
                 <div class="feature-card">
                     <img src="assets/feature-contact.svg" alt="一键联系" />
                     <h3>一键联系</h3>
-                    <p>点击司机即可查看信息并拨打电话，从查看到联系无缝衔接。</p>
+                    <p>底部司机卡片一键拨号，从查看到联系无缝衔接，出行更省心。</p>
                 </div>
                 <div class="feature-card">
                     <img src="assets/feature-safe.svg" alt="安全可靠" />
@@ -401,7 +412,7 @@
                 <div class="download-qrs">
                     <figure class="download-qr-item">
                         <div class="qr-wrap">
-                            <!-- 配置真实 APK 下载链接：在下方 script 中设置 MODY_APK_URL 后，二维码将自动指向该链接；或直接替换为 assets/qr-android.png 图片 -->
+                            <!-- Android 二维码指向落地页 download-android.html，以便在微信/QQ 内打开时显示「用浏览器打开」引导；APK 直链仅在落地页内使用 -->
                             <img id="qr-android" src="assets/qr-android.svg" alt="Android 下载二维码" />
                         </div>
                         <figcaption>Android 版</figcaption>
@@ -423,17 +434,22 @@
             <div class="footer-links">
                 <a href="#product">产品介绍</a>
                 <a href="#download">软件下载</a>
+                <a href="promo.html">推广合作</a>
                 <a href="contact.html">联系</a>
                 <a href="#">关于</a>
                 <a href="#">隐私政策</a>
                 <a href="#">服务条款</a>
             </div>
+            <p class="footer-beian">
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">闽ICP备2026006423号-1</a>
+                <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=35012402000095" target="_blank" rel="noopener noreferrer">闽公网安备35012402000095号</a>
+            </p>
             <p class="footer-copy">Copyright © 2025 摩迪 Mody. 保留所有权利.</p>
         </div>
     </footer>
     <script>
-        // 配置真实 Android APK 下载链接后，页面会使用该链接生成二维码（依赖第三方 API）；若不想依赖外网，请改为使用本地图片 assets/qr-android.png
-        var MODY_APK_URL = 'http://47.110.243.97/downloads/mody-android.apk'; // 例如：'https://你的域名/downloads/mody-android.apk'
+        // 官网 Android 二维码指向落地页，便于微信内展示「用浏览器打开」引导；APK 直链仅在落地页 download-android.html 内使用
+        var MODY_ANDROID_DOWNLOAD_PAGE = 'http://mody.中国/download-android.html'; // 若部署路径不同请按实际修改
 
         (function() {
             var nav = document.querySelector('.nav');
@@ -444,9 +460,9 @@
                     a.addEventListener('click', function() { nav.classList.remove('open'); });
                 });
             }
-            if (typeof MODY_APK_URL !== 'undefined' && MODY_APK_URL) {
+            if (typeof MODY_ANDROID_DOWNLOAD_PAGE !== 'undefined' && MODY_ANDROID_DOWNLOAD_PAGE) {
                 var el = document.getElementById('qr-android');
-                if (el) el.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(MODY_APK_URL);
+                if (el) el.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(MODY_ANDROID_DOWNLOAD_PAGE);
             }
         })();
     </script>
