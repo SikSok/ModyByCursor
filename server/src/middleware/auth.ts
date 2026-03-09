@@ -72,3 +72,21 @@ export const authorizeRoles = (...roles: string[]) => {
   };
 };
 
+/** App 用户（非管理员）：仅允许 role === 'user' 或 'driver'（同一 token） */
+export const requireAppUser = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    res.status(401).json({ message: '未认证' });
+    return;
+  }
+  const role = req.user.role;
+  if (role !== 'user' && role !== 'driver') {
+    res.status(403).json({ message: '仅限 App 用户' });
+    return;
+  }
+  next();
+};
+

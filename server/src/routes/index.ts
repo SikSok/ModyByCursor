@@ -5,6 +5,7 @@ import passengerRoutes from './passengerRoutes';
 import adminRoutes from './adminRoutes';
 import verificationCodeRoutes from './verificationCodeRoutes';
 import authRoutes from './authRoutes';
+import feedbackRoutes from './feedbackRoutes';
 import { getRequestLog } from '../middleware/requestLogger';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
@@ -57,6 +58,7 @@ router.use('/drivers', driverRoutes);
 router.use('/passenger', passengerRoutes);
 router.use('/admins', adminRoutes);
 router.use('/verification-codes', verificationCodeRoutes);
+router.use('/feedback', feedbackRoutes);
 
 // 健康检查
 router.get('/health', (req, res) => {

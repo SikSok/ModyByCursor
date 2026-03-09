@@ -2,7 +2,7 @@
 
 > 供新开 Agent 快速了解仓库状态、约定与已解决问题，避免重复踩坑。
 
-**最后更新：2026-03-02**
+**最后更新：2026-03-09**
 
 ---
 
@@ -105,3 +105,17 @@
 - 改 C 端请求：保留 `api.ts` 中 BlobUtil 的 `default ?? module` 取用；改 API 基址注意 `apiBaseUrl.js` 与 `dev-lan`/`pre`。
 - 改 server：勿恢复 4xx 的 `Connection: close`；表结构由 `sequelize.sync({ alter: true })` 在启动时同步，模型加字段后部署重启即可。
 - **账号模型**：仅 **users** 表，无 drivers 表/Driver 模型；driver_id 即 user.id（拥有司机身份的用户）；勿恢复 drivers 表或双 token 登录逻辑。
+
+---
+
+## 10. mody-app 页面与样式约定（避免 NaN 与卡顿）
+
+新增或修改 RN 页面时，请与 **ProfileScreen**、**DriverHomeScreen** 保持一致，避免以下两类问题：
+
+| 问题 | 原因 | 约定 |
+|------|------|------|
+| **fontSize 报 NaN、Render Error** | `scaledFontSize(baseSize, fontScale)` 的第二个参数必须是**数字**（缩放倍数），传成 `fontScaleLevel` 字符串会得到 `NaN`。 | 只传数字：用 `FONT_SCALE_VALUES[fontScaleLevel]` 或 `useFontScale().fontScale` 得到数字后再传给 `scaledFontSize`；或在 `createStyles` 内先 `const fontScale = FONT_SCALE_VALUES[fontScaleLevel] ?? 1`，再对所有字号使用 `scaledFontSize(size, fontScale)`。 |
+| **切换选项/类型时页面卡顿** | 每次 setState 触发重渲染时若执行 `StyleSheet.create` / `createStyles`，会加重 JS–Native 桥接与样式注册，造成明显卡顿。 | 样式要么**在模块顶层预创建并缓存**（如对 small/standard/large 各调一次 `createStyles` 存进 `STYLES_CACHE`，组件内按 `fontScaleLevel` 取用），要么 `useMemo(() => createStyles(...), [fontScaleLevel])` 且**依赖里不要包含会随每次点击/输入变化的 state**。交互时只做「取缓存 + 条件组合样式」，不在高频 state 变化路径里创建样式。 |
+
+**参考实现**：`mody-app/src/screens/FeedbackScreen.tsx`（模块级 `STYLES_CACHE` + `createStyles(fontScaleLevel)` 预创建三种字号）。
+

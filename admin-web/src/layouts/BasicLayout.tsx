@@ -15,12 +15,13 @@ const BasicLayout: React.FC = () => {
       logo={false}
       layout="mix"
       location={{ pathname }}
-      route={{
+        route={{
         path: '/',
         routes: [
           { path: '/stats', name: '数据统计' },
           { path: '/users', name: '用户列表' },
-          { path: '/drivers/pending', name: '司机审核' }
+          { path: '/drivers/pending', name: '司机审核' },
+          { path: '/feedback', name: '反馈管理' }
         ]
       }}
       menuItemRender={(item, dom) => {

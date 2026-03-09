@@ -12,6 +12,7 @@ import { DriverHomeScreen } from './src/screens/DriverHomeScreen';
 import { NotificationHistoryScreen } from './src/screens/NotificationHistoryScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { DriverVerificationScreen } from './src/screens/DriverVerificationScreen';
+import { FeedbackScreen } from './src/screens/FeedbackScreen';
 import type { Identity } from './src/context/IdentityContext';
 import { theme } from './src/theme';
 
@@ -35,12 +36,15 @@ function AppContent() {
   const [loginRole, setLoginRole] = useState<Identity | null>(null);
   const [tab, setTab] = useState<TabId>('home');
   const [showVerification, setShowVerification] = useState(false);
+  const [showFeedbackScreen, setShowFeedbackScreen] = useState(false);
 
   const hasAnyToken = !!token;
   const isDriver = currentIdentity === 'driver';
 
   const openVerification = useCallback(() => setShowVerification(true), []);
   const closeVerification = useCallback(() => setShowVerification(false), []);
+  const openFeedback = useCallback(() => setShowFeedbackScreen(true), []);
+  const closeFeedback = useCallback(() => setShowFeedbackScreen(false), []);
   const openDriverNotifications = useCallback(() => setTab('messages'), []);
   const onSwitchIdentityToHome = useCallback(() => setTab('home'), []);
   const handleLoginAs = useCallback((role: Identity) => setLoginRole(role), []);
@@ -93,11 +97,24 @@ function AppContent() {
 
           {activeTab === 'profile' ? (
             <View style={styles.tabPanel} pointerEvents="auto">
-              <ProfileScreen
-                onSwitchIdentity={onSwitchIdentityToHome}
-                onLoginAs={handleLoginAs}
-                onOpenVerification={openVerification}
-              />
+              {showFeedbackScreen ? (
+                <>
+                  <View style={styles.feedbackHeader}>
+                    <Pressable style={styles.feedbackBack} onPress={closeFeedback} android_ripple={null}>
+                      <Text style={styles.feedbackBackText}>‹ 返回</Text>
+                    </Pressable>
+                    <Text style={styles.feedbackTitle}>建议与反馈</Text>
+                  </View>
+                  <FeedbackScreen onBack={closeFeedback} />
+                </>
+              ) : (
+                <ProfileScreen
+                  onSwitchIdentity={onSwitchIdentityToHome}
+                  onLoginAs={handleLoginAs}
+                  onOpenVerification={openVerification}
+                  onOpenFeedback={openFeedback}
+                />
+              )}
             </View>
           ) : (
             <View style={[styles.tabPanel, styles.tabPanelHidden]} pointerEvents="none" />
@@ -281,6 +298,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
+  },
+  feedbackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.borderLight,
+    backgroundColor: theme.surface,
+  },
+  feedbackBack: {
+    paddingVertical: 8,
+    paddingRight: 16,
+  },
+  feedbackBackText: {
+    fontSize: 16,
+    color: theme.accent,
+    fontWeight: '600',
+  },
+  feedbackTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.text,
   },
   placeholderIcon: {
     fontSize: 32,

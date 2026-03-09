@@ -8,7 +8,9 @@ import UserLocationHistory from './UserLocationHistory';
 import DriverLocation from './DriverLocation';
 import DriverNotification from './DriverNotification';
 import VerificationCode from './VerificationCode';
+import Feedback from './Feedback';
 
-export { Admin, User, UserLocationHistory, DriverLocation, DriverNotification, VerificationCode };
+export { Admin, User, UserLocationHistory, DriverLocation, DriverNotification, VerificationCode, Feedback };
 
 User.hasMany(DriverLocation, { foreignKey: 'driver_id' });
+User.hasMany(Feedback, { foreignKey: 'user_id' });

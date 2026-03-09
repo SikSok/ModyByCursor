@@ -638,3 +638,38 @@ export async function submitVerification(
     ...jsonBody(payload, 'POST', '/drivers/verification'),
   });
 }
+
+/** 建议与反馈：App 用户提交 */
+export async function submitFeedback(
+  token: string,
+  payload: {
+    type: 'suggestion' | 'experience' | 'report';
+    content: string;
+    reported_user_info?: string;
+  }
+) {
+  return request<{ id: number }>('/feedback', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    ...jsonBody(payload, 'POST', '/feedback'),
+  });
+}
+
+/** 我的反馈列表（含回复） */
+export async function getMyFeedback(token: string) {
+  return request<
+    Array<{
+      id: number;
+      type: string;
+      content: string;
+      reported_user_info: string | null;
+      status: string;
+      admin_reply: string | null;
+      replied_at: string | null;
+      created_at: string;
+    }>
+  >('/feedback/my', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

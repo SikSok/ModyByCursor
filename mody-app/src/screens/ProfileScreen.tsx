@@ -16,9 +16,10 @@ type Props = {
   onSwitchIdentity: () => void;
   onLoginAs: (role: Identity) => void;
   onOpenVerification?: () => void;
+  onOpenFeedback?: () => void;
 };
 
-export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification }: Props) {
+export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentity, onLoginAs, onOpenVerification, onOpenFeedback }: Props) {
   const {
     currentIdentity,
     token,
@@ -258,6 +259,21 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
         </View>
       </View>
 
+      {onOpenFeedback && (
+        <Pressable style={styles.card} onPress={onOpenFeedback}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIcon, styles.cardIconFeedback]}>
+              <Text style={styles.cardIconText}>💬</Text>
+            </View>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.cardTitle}>建议与反馈</Text>
+              <Text style={styles.cardHint}>意见、体验问题或举报，我们会认真处理</Text>
+            </View>
+            <Text style={styles.nicknameArrow}>›</Text>
+          </View>
+        </Pressable>
+      )}
+
       <Pressable style={({ pressed }) => [styles.btnOutline, pressed && styles.btnPressed]} onPress={logout}>
         <Text style={styles.btnOutlineIcon}>🚪</Text>
         <Text style={styles.btnOutlineText}>退出登录</Text>
@@ -321,7 +337,7 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
 });
 
 function createStyles(fontScaleLevel: FontScaleLevel) {
-  const fontScale = FONT_SCALE_VALUES[fontScaleLevel];
+  const fontScale = FONT_SCALE_VALUES[fontScaleLevel] ?? 1;
   return StyleSheet.create({
   container: {
     padding: 20,
@@ -513,6 +529,7 @@ function createStyles(fontScaleLevel: FontScaleLevel) {
   cardIconSwitch: { backgroundColor: theme.accentSoft },
   cardIconVerify: { backgroundColor: 'rgba(217,119,6,0.15)' },
   cardIconPayment: { backgroundColor: theme.greenSoft },
+  cardIconFeedback: { backgroundColor: theme.blueSoft },
   cardHeaderText: { flex: 1 },
   cardTitle: { fontSize: scaledFontSize(18, fontScale), fontWeight: '700', color: theme.text, marginBottom: 4 },
   cardHint: { fontSize: scaledFontSize(13, fontScale), color: theme.textMuted, lineHeight: 20 },

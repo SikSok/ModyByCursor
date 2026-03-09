@@ -123,6 +123,34 @@ export async function markNotificationsDelivered(ids: number[]): Promise<void> {
   );
 }
 
+/** 反馈回复：给司机发一条站内通知（管理员回复 App 用户反馈时，若该用户是司机则推送） */
+export async function createFeedbackReplyNotification(
+  driverId: number,
+  content: string
+): Promise<DriverNotification> {
+  const text = content.length > 200 ? content.slice(0, 200) + '…' : content;
+  const row = await DriverNotification.create({
+    driver_id: driverId,
+    passenger_id: null,
+    type: 'feedback_reply',
+    content: `【反馈回复】${text}`,
+    delivered: false,
+    read: false,
+  });
+  if (
+    pushToDriverFn &&
+    pushToDriverFn(driverId, {
+      type: 'NOTIFICATION',
+      id: row.id,
+      content: row.content,
+      created_at: row.created_at,
+    })
+  ) {
+    await row.update({ delivered: true });
+  }
+  return row;
+}
+
 /** 可选：清理超出数量的旧通知（如每司机保留最近 100 条） */
 export async function trimOldNotifications(): Promise<void> {
   const drivers = await DriverNotification.findAll({

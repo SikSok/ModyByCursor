@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/Login';
 import DriverReviewPage from './pages/DriverReview';
+import FeedbackPage from './pages/Feedback';
 import StatsPage from './pages/Stats';
 import UserListPage from './pages/UserList';
 import BasicLayout from './layouts/BasicLayout';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
         <Route path="stats" element={<StatsPage />} />
         <Route path="users" element={<UserListPage />} />
         <Route path="drivers/pending" element={<DriverReviewPage />} />
+        <Route path="feedback" element={<FeedbackPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
