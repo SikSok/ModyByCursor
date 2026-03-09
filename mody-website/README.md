@@ -38,7 +38,17 @@ npx serve .
 
 ## 部署
 
-将 `mody-website` 目录整体部署到任意静态托管（如 GitHub Pages、Vercel、OSS 静态网站）即可。资源均相对路径，无需修改。
+将 `mody-website` 目录整体部署到任意静态托管（如 GitHub Pages、Vercel、OSS 静态网站）即可。**图片等资源使用根路径 `/assets/...`**，保证任意入口（如 `/download-android.html`）下都能正确加载。
+
+### 使用 Nginx 时：APK 下载必须可访问
+
+若使用 Nginx 部署（见 `docs/nginx-mody-website.conf`），务必：
+
+1. **将 APK 放到站点目录下**：在服务器上创建目录 `downloads`，放入 `mody-android.apk`，即路径为：
+   ```
+   /var/www/mody-website/downloads/mody-android.apk
+   ```
+2. **使用配置中的 `location /downloads/`**：该段配置保证对 `/downloads/mody-android.apk` 的请求只返回真实文件；若未配置或未放文件，Nginx 会因 `try_files` 回退到 `index.html`，用户点下载会看到官网首页而非 APK。
 
 ## 资源说明
 

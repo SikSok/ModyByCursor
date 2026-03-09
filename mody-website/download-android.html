@@ -155,7 +155,7 @@
 <body>
     <!-- 系统浏览器：下载区域 -->
     <div class="download-area" id="downloadArea">
-        <img class="download-logo" src="assets/ic_launcher.png" alt="摩迪" onerror="this.style.display='none'">
+        <img class="download-logo" src="/assets/ic_launcher.png" alt="摩迪" onerror="this.style.display='none'">
         <p class="download-app-name">摩迪 Mody</p>
         <h1 class="download-title">摩迪 Android 版</h1>
         <a class="download-btn" id="downloadBtn" href="" download>立即下载</a>
@@ -179,7 +179,7 @@
 
     <script>
         (function() {
-            var APK_URL = 'http://47.110.243.97/downloads/mody-android.apk';
+            var APK_URL = 'http://mody.xn--fiqs8s/downloads/mody-android.apk';
             var IN_APP_UA_PATTERNS = ['MicroMessenger', 'QQ/', 'AlipayClient', 'UCBrowser'];
             var ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
             var isInApp = IN_APP_UA_PATTERNS.some(function(p) { return ua.indexOf(p) !== -1; });
