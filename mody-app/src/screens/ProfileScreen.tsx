@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIdentity } from '../context/IdentityContext';
 import type { Identity } from '../context/IdentityContext';
 import { useFontScale, FONT_SCALE_LABELS, FONT_SCALE_VALUES, scaledFontSize, type FontScaleLevel } from '../context/FontScaleContext';
-import { getDriverProfile, updateDriverProfile } from '../services/api';
+import { getDriverProfile, updateDriverProfile, getUserProfile, updateUserProfile } from '../services/api';
 import { theme } from '../theme';
 import { STORAGE_KEY_PAYMENT_QR_URI } from '../constants/storageKeys';
 import { getDefaultDriverAvatarSource } from '../utils/defaultAvatars';
@@ -32,10 +32,17 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
   const { showToast } = useToast();
   const styles = useMemo(() => createStyles(fontScaleLevel), [fontScaleLevel]);
   const [driverStatus, setDriverStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
-  const [paymentQrUri, setPaymentQrUri] = useState<string | null>(null);
   const [driverName, setDriverName] = useState<string>(DEFAULT_DRIVER_DISPLAY_NAME);
   const [driverAvatar, setDriverAvatar] = useState<string | null>(null);
+  const [driverPhone, setDriverPhone] = useState<string | null>(null);
+  const [paymentQrUri, setPaymentQrUri] = useState<string | null>(null);
+  const [passengerName, setPassengerName] = useState<string>('');
+  const [passengerAvatar, setPassengerAvatar] = useState<string | null>(null);
+  const [passengerPhone, setPassengerPhone] = useState<string | null>(null);
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
+  const [phoneModalVisible, setPhoneModalVisible] = useState(false);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [nicknameInput, setNicknameInput] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [fontScaleModalVisible, setFontScaleModalVisible] = useState(false);
@@ -53,10 +60,25 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
         if (data) {
           setDriverName(data.name && String(data.name).trim() ? data.name : DEFAULT_DRIVER_DISPLAY_NAME);
           setDriverAvatar(data.avatar && String(data.avatar).trim() ? data.avatar : null);
+          setDriverPhone(data.phone != null && String(data.phone).trim() ? String(data.phone).trim() : null);
         }
       })
       .catch(() => setDriverStatus(contextDriverStatus ?? null));
   }, [currentIdentity, token, contextDriverStatus]);
+
+  useEffect(() => {
+    if (currentIdentity !== 'passenger' || !token) return;
+    getUserProfile(token)
+      .then((res) => {
+        const data = res?.data;
+        if (data) {
+          setPassengerName(data.name && String(data.name).trim() ? data.name : '');
+          setPassengerAvatar(data.avatar && String(data.avatar).trim() ? data.avatar : null);
+          setPassengerPhone(data.phone != null && String(data.phone).trim() ? String(data.phone).trim() : null);
+        }
+      })
+      .catch(() => {});
+  }, [currentIdentity, token]);
 
   useEffect(() => {
     if (currentIdentity !== 'driver') return;
@@ -118,6 +140,50 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
     }
   };
 
+  const openPhoneModal = () => {
+    const current = currentIdentity === 'driver' ? driverPhone : passengerPhone;
+    setPhoneInput(current || '');
+    setPhoneError(null);
+    setPhoneModalVisible(true);
+  };
+
+  const validatePhone = (value: string): boolean => {
+    const t = value.trim();
+    if (!t) return true;
+    if (!/^1\d{10}$/.test(t)) {
+      setPhoneError('请输入正确的 11 位手机号');
+      return false;
+    }
+    setPhoneError(null);
+    return true;
+  };
+
+  const savePhone = async () => {
+    const raw = phoneInput.trim();
+    if (!/^1\d{10}$/.test(raw)) {
+      setPhoneError('请输入正确的 11 位手机号');
+      return;
+    }
+    if (!token) return;
+    setPhoneError(null);
+    setPhoneModalVisible(false);
+    try {
+      setSavingProfile(true);
+      if (currentIdentity === 'driver') {
+        await updateDriverProfile(token, { phone: raw });
+        setDriverPhone(raw);
+      } else {
+        await updateUserProfile(token, { phone: raw });
+        setPassengerPhone(raw);
+      }
+      showToast('手机号已更新', 'success');
+    } catch (e: any) {
+      showToast(e?.message || '更新失败', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const handleSelectFontScale = async (level: FontScaleLevel) => {
     await setFontScaleLevel(level);
     setFontScaleModalVisible(false);
@@ -150,6 +216,31 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
           <Pressable style={styles.nicknameRow} onPress={openNicknameEdit}>
             <Text style={styles.nicknameLabel}>昵称</Text>
             <Text style={styles.nicknameValue} numberOfLines={1}>{driverName}</Text>
+            <Text style={styles.nicknameArrow}>›</Text>
+          </Pressable>
+          <Pressable style={styles.nicknameRow} onPress={openPhoneModal}>
+            <Text style={styles.nicknameLabel}>手机号</Text>
+            <Text style={styles.nicknameValue} numberOfLines={1}>{driverPhone || '未绑定'}</Text>
+            <Text style={styles.nicknameArrow}>›</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {currentIdentity === 'passenger' && (
+        <View style={styles.profileCard}>
+          <View style={styles.passengerHeader}>
+            {passengerAvatar ? (
+              <Image source={{ uri: passengerAvatar }} style={styles.passengerAvatar} />
+            ) : (
+              <View style={[styles.passengerAvatar, styles.passengerAvatarPlaceholder]}>
+                <Text style={styles.passengerAvatarText}>👤</Text>
+              </View>
+            )}
+            <Text style={styles.passengerName} numberOfLines={1}>{passengerName || '—'}</Text>
+          </View>
+          <Pressable style={styles.nicknameRow} onPress={openPhoneModal}>
+            <Text style={styles.nicknameLabel}>手机号</Text>
+            <Text style={styles.nicknameValue} numberOfLines={1}>{passengerPhone || '未绑定'}</Text>
             <Text style={styles.nicknameArrow}>›</Text>
           </Pressable>
         </View>
@@ -332,6 +423,38 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal
+        visible={phoneModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhoneModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setPhoneModalVisible(false)}>
+          <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>{currentIdentity === 'driver' ? (driverPhone ? '修改手机号' : '绑定手机号') : (passengerPhone ? '修改手机号' : '绑定手机号')}</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={phoneInput}
+              onChangeText={(t) => { setPhoneInput(t); setPhoneError(null); }}
+              onBlur={() => phoneInput.trim() && validatePhone(phoneInput)}
+              placeholder="11 位手机号"
+              placeholderTextColor={theme.textMuted}
+              keyboardType="phone-pad"
+              maxLength={11}
+            />
+            {phoneError ? <Text style={styles.phoneError}>{phoneError}</Text> : null}
+            <View style={styles.modalActions}>
+              <Pressable style={({ pressed }) => [styles.modalBtn, styles.modalBtnCancel, pressed && styles.btnPressed]} onPress={() => setPhoneModalVisible(false)}>
+                <Text style={styles.modalBtnCancelText}>取消</Text>
+              </Pressable>
+              <Pressable style={({ pressed }) => [styles.modalBtn, styles.modalBtnOk, pressed && styles.btnPressed]} onPress={savePhone} disabled={savingProfile}>
+                <Text style={styles.modalBtnOkText}>保存</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 });
@@ -352,6 +475,27 @@ function createStyles(fontScaleLevel: FontScaleLevel) {
     borderColor: theme.borderLight,
     padding: 20,
     alignItems: 'center',
+  },
+  passengerHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  passengerAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.borderLight,
+  },
+  passengerAvatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passengerAvatarText: { fontSize: 28 },
+  passengerName: {
+    fontSize: scaledFontSize(16, fontScale),
+    fontWeight: '600',
+    color: theme.text,
+    marginTop: 8,
   },
   avatarWrap: {
     alignItems: 'center',
@@ -469,6 +613,11 @@ function createStyles(fontScaleLevel: FontScaleLevel) {
     fontSize: scaledFontSize(16, fontScale),
     color: theme.text,
     marginBottom: 20,
+  },
+  phoneError: {
+    fontSize: scaledFontSize(13, fontScale),
+    color: '#dc2626',
+    marginBottom: 12,
   },
   modalActions: {
     flexDirection: 'row',

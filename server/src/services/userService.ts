@@ -22,14 +22,15 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 
 export class UserService {
   async register(phone: string, password: string, name?: string) {
-    const existingUser = await User.findOne({ where: { phone } });
+    const trimmed = phone.trim();
+    const existingUser = await User.findOne({ where: { phone: trimmed } });
     if (existingUser) {
       throw new Error('该手机号已被注册');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
-      phone,
+      phone: trimmed,
       password_hash: hashedPassword,
       name,
       status: 1
@@ -57,7 +58,8 @@ export class UserService {
   }
 
   async login(phone: string, password: string) {
-    const user = await User.findOne({ where: { phone } });
+    const phoneTrimmed = typeof phone === 'string' ? phone.trim() : '';
+    const user = await User.findOne({ where: { phone: phoneTrimmed } });
     if (!user) {
       throw new Error('手机号或密码错误');
     }
@@ -102,13 +104,30 @@ export class UserService {
     return user;
   }
 
-  async updateUser(id: number, data: { name?: string; avatar?: string }) {
+  async updateUser(id: number, data: { name?: string; avatar?: string; phone?: string }) {
     const user = await User.findByPk(id);
     if (!user) {
       throw new Error('用户不存在');
     }
 
-    await user.update(data);
+    const updates: { name?: string; avatar?: string; phone?: string | null } = {};
+    if (data.name !== undefined) updates.name = data.name;
+    if (data.avatar !== undefined) updates.avatar = data.avatar;
+    if (data.phone !== undefined) {
+      const phone = typeof data.phone === 'string' ? data.phone.trim() : '';
+      if (phone && !/^1\d{10}$/.test(phone)) {
+        throw new Error('请输入正确的 11 位手机号');
+      }
+      const trimmed = phone || null;
+      if (trimmed) {
+        const existing = await User.findOne({ where: { phone: trimmed } });
+        if (existing && existing.id !== id) {
+          throw new Error('该手机号已被其他账号使用');
+        }
+      }
+      updates.phone = trimmed || null;
+    }
+    if (Object.keys(updates).length > 0) await user.update(updates);
     return {
       id: user.id,
       phone: user.phone,

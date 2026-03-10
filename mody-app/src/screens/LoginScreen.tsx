@@ -12,14 +12,13 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Identity } from '../context/IdentityContext';
 import {
-  sendCode,
   userRegister,
   driverRegister,
   unifiedLogin,
-  resetPassword,
   getUserFacingMessage,
   getLastApiError,
   clearLastApiError,
+  wechatLogin as apiWechatLogin,
 } from '../services/api';
 import { theme } from '../theme';
 import { useToast } from '../context/ToastContext';
@@ -39,18 +38,11 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [phoneLoaded, setPhoneLoaded] = useState(false);
 
   const { showToast } = useToast();
   const [loginErrorCode, setLoginErrorCode] = useState<LoginErrorCode>(null);
-
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetPhone, setResetPhone] = useState('');
-  const [resetCode, setResetCode] = useState('');
-  const [resetNewPassword, setResetNewPassword] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
 
   const [lastApiError, setLastApiError] = useState<string | null>(null);
   const [showLastErrorDetail, setShowLastErrorDetail] = useState(false);
@@ -97,35 +89,6 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
     try {
       await AsyncStorage.setItem(STORAGE_KEY_REMEMBERED_PHONE, phoneNumber.trim());
     } catch (_) {}
-  }
-
-  async function onSendCode(type: 'register' | 'login' | 'reset_password') {
-    const targetPhone = type === 'reset_password' ? resetPhone.trim() : phone.trim();
-    if (!targetPhone || targetPhone.length < 6) {
-      showToast('请先输入手机号', 'error');
-      return;
-    }
-    try {
-      const res = await sendCode(targetPhone, type);
-      const devCode = (res.data as { code?: string })?.code;
-      showToast(devCode ? `验证码已发送（开发：${devCode}）` : '验证码已发送', 'success');
-    } catch (e: any) {
-      showToast(getUserFacingMessage(e, '发送失败'), 'error');
-    }
-  }
-
-  async function onSendResetCode() {
-    if (!resetPhone.trim() || resetPhone.length < 6) {
-      showToast('请先输入手机号', 'error');
-      return;
-    }
-    try {
-      const res = await sendCode(resetPhone.trim(), 'reset_password');
-      const devCode = (res.data as { code?: string })?.code;
-      showToast(devCode ? `验证码已发送（开发：${devCode}）` : '验证码已发送', 'success');
-    } catch (e: any) {
-      showToast(getUserFacingMessage(e, '发送失败'), 'error');
-    }
   }
 
   useEffect(() => {
@@ -191,14 +154,14 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
     setLoginErrorCode(null);
     try {
       if (isPassenger) {
-        const res = await userRegister({ phone, password, name, code });
+        const res = await userRegister({ phone, password, name });
         saveRememberedPhone(phone);
         const data = res.data as { token?: string; user?: { token?: string } };
         const token = data.token ?? data.user?.token ?? null;
         onSuccess(token, { hasDriver: false });
         showToast('注册成功', 'success');
       } else {
-        const res = await driverRegister({ phone, password, name, code });
+        const res = await driverRegister({ phone, password, name });
         saveRememberedPhone(phone);
         const data = res.data as {
           user?: { token: string };
@@ -222,112 +185,53 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
     }
   }
 
-  async function onSubmitResetPassword() {
-    if (resetLoading) return;
-    if (!resetPhone.trim() || !resetCode.trim() || !resetNewPassword.trim()) {
-      showToast('请填写手机号、验证码和新密码', 'error');
-      return;
-    }
-    if (resetNewPassword.length < 6) {
-      showToast('新密码至少 6 位', 'error');
-      return;
-    }
-    setResetLoading(true);
+  async function onWechatLogin() {
+    if (loading) return;
+    setLoading(true);
+    setLoginErrorCode(null);
     try {
-      await resetPassword({
-        phone: resetPhone.trim(),
-        code: resetCode.trim(),
-        new_password: resetNewPassword,
+      let params: { code?: string; nickname?: string; avatar?: string } = {};
+      try {
+        const { getWechatAuthCode } = require('../utils/wechat');
+        const auth = await getWechatAuthCode();
+        params = { code: auth.code, nickname: auth.nickname, avatar: auth.avatar };
+      } catch (wechatErr: any) {
+        const msg = wechatErr?.message || '';
+        if (/Cannot find module|Unable to resolve/.test(msg)) {
+          showToast('微信登录需先配置 react-native-wechat-lib 与微信开放平台', 'error');
+        } else {
+          showToast(msg || '请安装微信并重试', 'error');
+        }
+        setLoading(false);
+        return;
+      }
+      const res = await apiWechatLogin(params);
+      const data = res.data as {
+        user?: { token: string };
+        hasDriver?: boolean;
+        driverStatus?: 'pending' | 'approved' | 'rejected';
+        isAvailable?: boolean;
+      };
+      const token = data.user?.token ?? null;
+      onSuccess(token, {
+        hasDriver: data.hasDriver ?? false,
+        driverStatus: data.driverStatus,
+        isAvailable: data.isAvailable,
       });
-      showToast('密码已重置，请使用新密码登录', 'success');
-      setShowForgotPassword(false);
-      setResetCode('');
-      setResetNewPassword('');
+      showToast('登录成功', 'success');
     } catch (e: any) {
-      showToast(getUserFacingMessage(e, '重置失败'), 'error');
+      showToast(getUserFacingMessage(e, '微信登录失败') || '请稍后重试', 'error');
+      getLastApiError().then((raw) => raw && setLastApiError(raw));
     } finally {
-      setResetLoading(false);
+      setLoading(false);
     }
   }
 
   const roleLabel = isPassenger ? '乘客' : '司机';
   const submitDisabled =
     !canAuth ||
-    (mode === 'register' && !code) ||
     (mode === 'register' && !isPassenger && !name.trim()) ||
     loading;
-
-  const resetPasswordForm = (
-    <Modal
-      visible={showForgotPassword}
-      animationType="slide"
-      transparent
-      onRequestClose={() => setShowForgotPassword(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>忘记密码</Text>
-            <Pressable onPress={() => setShowForgotPassword(false)} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}>
-              <Text style={styles.modalClose}>✕</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.modalHint}>通过手机验证码重置密码</Text>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>手机号</Text>
-            <TextInput
-              value={resetPhone}
-              onChangeText={setResetPhone}
-              placeholder="请输入手机号"
-              placeholderTextColor={theme.textMuted}
-              style={styles.input}
-              keyboardType="phone-pad"
-              editable={!resetLoading}
-            />
-          </View>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>验证码</Text>
-            <View style={styles.row}>
-              <TextInput
-                value={resetCode}
-                onChangeText={setResetCode}
-                placeholder="验证码"
-                placeholderTextColor={theme.textMuted}
-                style={[styles.input, styles.inputFlex]}
-                editable={!resetLoading}
-              />
-              <Pressable onPress={onSendResetCode} style={styles.btnMinor} disabled={resetLoading}>
-                <Text style={styles.btnMinorText}>获取验证码</Text>
-              </Pressable>
-            </View>
-          </View>
-          <View style={styles.inputWrap}>
-            <Text style={styles.inputLabel}>新密码（≥6位）</Text>
-            <TextInput
-              value={resetNewPassword}
-              onChangeText={setResetNewPassword}
-              placeholder="请输入新密码"
-              placeholderTextColor={theme.textMuted}
-              style={styles.input}
-              secureTextEntry
-              editable={!resetLoading}
-            />
-          </View>
-          <Pressable
-            onPress={onSubmitResetPassword}
-            style={[styles.btn, (resetLoading || !resetPhone || !resetCode || resetNewPassword.length < 6) && styles.btnDisabled]}
-            disabled={resetLoading || !resetPhone.trim() || !resetCode.trim() || resetNewPassword.length < 6}
-          >
-            {resetLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.btnText}>确认重置</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
 
   return (
     <>
@@ -406,26 +310,6 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
                 editable={!loading}
               />
             </View>
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>✉️ 验证码</Text>
-              <View style={styles.row}>
-                <TextInput
-                  value={code}
-                  onChangeText={setCode}
-                  placeholder="验证码"
-                  placeholderTextColor={theme.textMuted}
-                  style={[styles.input, styles.inputFlex]}
-                  editable={!loading}
-                />
-                <Pressable
-                  onPress={() => onSendCode('register')}
-                  style={styles.btnMinor}
-                  disabled={loading}
-                >
-                  <Text style={styles.btnMinorText}>发送</Text>
-                </Pressable>
-              </View>
-            </View>
           </>
         )}
 
@@ -443,18 +327,6 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
             secureTextEntry
             editable={!loading}
           />
-          {mode === 'login' && (
-            <Pressable
-              onPress={() => {
-                setLoginErrorCode(null);
-                setResetPhone(phone.trim() || '');
-                setShowForgotPassword(true);
-              }}
-              style={styles.linkWrap}
-            >
-              <Text style={styles.link}>忘记密码？</Text>
-            </Pressable>
-          )}
         </View>
 
         {loginErrorCode === 'PHONE_NOT_REGISTERED' && (
@@ -470,14 +342,10 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
         )}
         {loginErrorCode === 'WRONG_PASSWORD' && (
           <Pressable
-            onPress={() => {
-              setLoginErrorCode(null);
-              setResetPhone(phone.trim() || '');
-              setShowForgotPassword(true);
-            }}
+            onPress={() => setLoginErrorCode(null)}
             style={styles.actionWrap}
           >
-            <Text style={styles.actionLink}>忘记密码？通过验证码重置</Text>
+            <Text style={styles.actionLink}>请确认密码后重试</Text>
           </Pressable>
         )}
 
@@ -495,6 +363,14 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
           ) : (
             <Text style={styles.btnText}>{mode === 'login' ? '登录' : '注册'}</Text>
           )}
+        </Pressable>
+
+        <Pressable
+          onPress={onWechatLogin}
+          style={[styles.btnWechat, loading && styles.btnDisabled]}
+          disabled={loading}
+        >
+          <Text style={styles.btnWechatText}>微信登录</Text>
         </Pressable>
 
         {lastApiError != null && __DEV__ && (
@@ -520,7 +396,6 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
           </View>
         )}
       </ScrollView>
-      {resetPasswordForm}
     </>
   );
 }
@@ -609,6 +484,16 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
+  btnWechat: {
+    backgroundColor: '#07C160',
+    paddingVertical: 14,
+    borderRadius: theme.borderRadiusSm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    marginTop: 12,
+  },
+  btnWechatText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
   btnMinor: {
     backgroundColor: theme.surface2,
     paddingVertical: 12,

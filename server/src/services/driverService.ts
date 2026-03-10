@@ -13,7 +13,8 @@ export class DriverService {
     license_plate?: string,
     vehicle_type?: string
   ) {
-    const existingUser = await User.findOne({ where: { phone } });
+    const phoneTrimmed = typeof phone === 'string' ? phone.trim() : '';
+    const existingUser = await User.findOne({ where: { phone: phoneTrimmed } });
     const hashedPassword = await bcrypt.hash(password, 10);
 
     let user: User;
@@ -29,7 +30,7 @@ export class DriverService {
       user = existingUser;
     } else {
       user = await User.create({
-        phone,
+        phone: phoneTrimmed,
         password_hash: hashedPassword,
         name,
         driver_status: 'pending',
@@ -57,7 +58,8 @@ export class DriverService {
   }
 
   async login(phone: string, password: string) {
-    const user = await User.findOne({ where: { phone } });
+    const phoneTrimmed = typeof phone === 'string' ? phone.trim() : '';
+    const user = await User.findOne({ where: { phone: phoneTrimmed } });
     if (!user) {
       throw new Error('手机号或密码错误');
     }
@@ -100,13 +102,29 @@ export class DriverService {
       id_card?: string;
       license_plate?: string;
       vehicle_type?: string;
+      phone?: string;
     }
   ) {
     const user = await User.findByPk(id);
     if (!user || user.driver_status == null) {
       throw new Error('司机不存在');
     }
-    await user.update(data);
+    if (data.phone !== undefined) {
+      const phone = typeof data.phone === 'string' ? data.phone.trim() : '';
+      if (phone && !/^1\d{10}$/.test(phone)) {
+        throw new Error('请输入正确的 11 位手机号');
+      }
+      const trimmed = phone || null;
+      if (trimmed) {
+        const existing = await User.findOne({ where: { phone: trimmed } });
+        if (existing && existing.id !== id) {
+          throw new Error('该手机号已被其他账号使用');
+        }
+      }
+      await user.update({ ...data, phone: trimmed || null });
+    } else {
+      await user.update(data);
+    }
     return {
       id: user.id,
       phone: user.phone,
@@ -125,7 +143,14 @@ export class DriverService {
     if (!user || user.driver_status == null) {
       throw new Error('司机不存在');
     }
-    // 不强制身份认证即可接单：未认证司机也可设为可接客并在乘客端展示
+    if (is_available) {
+      const phone = user.phone;
+      if (!phone || typeof phone !== 'string' || !/^1\d{10}$/.test(phone.trim())) {
+        const err = new Error('请先绑定手机号') as Error & { code?: string };
+        err.code = 'NO_PHONE';
+        throw err;
+      }
+    }
     await user.update({ is_available });
     return user;
   }

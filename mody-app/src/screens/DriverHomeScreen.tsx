@@ -187,13 +187,19 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
       .catch(() => {});
   }, [token]);
 
-  /** 冷启动或首次进入司机首页时默认设为营业中（不持久化，不覆盖后端已返回的 is_available） */
+  /** 冷启动或首次进入司机首页时，若已绑手机则默认设为营业中（不覆盖后端已返回的 is_available） */
   useEffect(() => {
     if (!token || currentIdentity !== 'driver') return;
     if (hasSetDefaultAvailabilityThisSession.current) return;
     hasSetDefaultAvailabilityThisSession.current = true;
-    setAvailability(token, true).catch(() => {});
-    setIsAvailable(true);
+    getDriverProfile(token).then((res) => {
+      const phone = res?.data?.phone;
+      const hasValidPhone = typeof phone === 'string' && /^1\d{10}$/.test(phone.trim());
+      if (hasValidPhone) {
+        setAvailability(token, true).catch(() => {});
+        setIsAvailable(true);
+      }
+    }).catch(() => {});
   }, [token, currentIdentity]);
 
   useEffect(() => {
@@ -313,14 +319,35 @@ const WEATHER_TIMEOUT_MS = 10000;
 
   const onToggleAvailable = useCallback(async () => {
     if (!token) return;
+    if (!isAvailable) {
+      try {
+        const profileRes = await getDriverProfile(token);
+        const phone = profileRes?.data?.phone;
+        const hasValidPhone = typeof phone === 'string' && /^1\d{10}$/.test(phone.trim());
+        if (!hasValidPhone) {
+          showToast('请先绑定手机号', 'error');
+          onOpenProfile?.();
+          return;
+        }
+      } catch {
+        showToast('请先绑定手机号', 'error');
+        onOpenProfile?.();
+        return;
+      }
+    }
     try {
       const next = !isAvailable;
       await setAvailability(token, next);
       setIsAvailable(next);
     } catch (e: any) {
+      if ((e as { code?: string }).code === 'NO_PHONE') {
+        showToast('请先绑定手机号', 'error');
+        onOpenProfile?.();
+        return;
+      }
       showToast(getUserFacingMessage(e, '更新失败'), 'error');
     }
-  }, [token, isAvailable, showToast]);
+  }, [token, isAvailable, showToast, onOpenProfile]);
 
   const openPaymentQR = useCallback(() => {
     if (paymentQrUri) {

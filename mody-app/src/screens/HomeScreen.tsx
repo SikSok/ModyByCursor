@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView } from 'react-native';
-import { getNearbyDrivers, sendCode, userLogin, userRegister } from '../services/api';
+import { getNearbyDrivers, userLogin, userRegister } from '../services/api';
 
 export const HomeScreen: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
   const [token, setToken] = useState<string | null>(null);
   const [log, setLog] = useState<string>('');
   const [lat, setLat] = useState('31.2304');
@@ -15,16 +14,6 @@ export const HomeScreen: React.FC = () => {
   const [nearbyCount, setNearbyCount] = useState<number | null>(null);
 
   const canAuth = useMemo(() => phone.length >= 6 && password.length >= 6, [phone, password]);
-
-  async function onSendCode(type: 'register' | 'login') {
-    try {
-      const res = await sendCode(phone, type);
-      const devCode = (res.data as any)?.code;
-      setLog(`验证码已发送，过期时间：${res.data.expires_at}${devCode ? `（开发环境验证码：${devCode}）` : ''}`);
-    } catch (e: any) {
-      setLog(e.message || '发送失败');
-    }
-  }
 
   async function onLogin() {
     try {
@@ -38,7 +27,7 @@ export const HomeScreen: React.FC = () => {
 
   async function onRegister() {
     try {
-      const res = await userRegister({ phone, password, name, code });
+      const res = await userRegister({ phone, password, name });
       setToken(res.data.token);
       setLog('注册成功');
     } catch (e: any) {
@@ -72,18 +61,10 @@ export const HomeScreen: React.FC = () => {
       <TextInput value={phone} onChangeText={setPhone} placeholder="手机号" style={styles.input} keyboardType="phone-pad" />
 
       {mode === 'register' ? (
-        <>
-          <TextInput value={name} onChangeText={setName} placeholder="昵称（可选）" style={styles.input} />
-          <View style={styles.row}>
-            <TextInput value={code} onChangeText={setCode} placeholder="验证码" style={[styles.input, styles.inputFlex]} />
-            <Pressable onPress={() => onSendCode('register')} style={styles.btnMinor}>
-              <Text style={styles.btnMinorText}>发验证码</Text>
-            </Pressable>
-          </View>
-        </>
+        <TextInput value={name} onChangeText={setName} placeholder="昵称（可选）" style={styles.input} />
       ) : (
         <View style={styles.row}>
-          <Text style={styles.hint}>登录使用密码（验证码登录可后续补）</Text>
+          <Text style={styles.hint}>使用手机号+密码登录</Text>
         </View>
       )}
 
@@ -98,7 +79,7 @@ export const HomeScreen: React.FC = () => {
       <Pressable
         onPress={mode === 'login' ? onLogin : onRegister}
         style={[styles.btn, !canAuth && styles.btnDisabled]}
-        disabled={!canAuth || (mode === 'register' && !code)}
+        disabled={!canAuth}
       >
         <Text style={styles.btnText}>{mode === 'login' ? '登录' : '注册'}</Text>
       </Pressable>

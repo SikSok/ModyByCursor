@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import userService from '../services/userService';
-import verificationCodeService from '../services/verificationCodeService';
 import driverLocationService from '../services/driverLocationService';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
@@ -20,14 +19,11 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 export class UserController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { phone, password, name, code } = req.body;
-      
-      if (!phone || !password || !code) {
-        return sendError(res, '手机号、密码、验证码不能为空', 400);
-      }
+      const { phone, password, name } = req.body;
 
-      // 验证码校验（register）
-      await verificationCodeService.verifyCode(phone, 'register', code);
+      if (!phone || !password) {
+        return sendError(res, '手机号、密码不能为空', 400);
+      }
 
       const result = await userService.register(phone, password, name);
       sendSuccess(res, result, '注册成功', 201);
@@ -72,8 +68,8 @@ export class UserController {
         return sendError(res, '未认证', 401);
       }
 
-      const { name, avatar } = req.body;
-      const user = await userService.updateUser(userId, { name, avatar });
+      const { name, avatar, phone } = req.body;
+      const user = await userService.updateUser(userId, { name, avatar, phone });
       sendSuccess(res, user, '更新成功');
     } catch (error: any) {
       next(error);

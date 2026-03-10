@@ -5,7 +5,7 @@ export type DriverStatus = 'pending' | 'approved' | 'rejected';
 
 interface UserAttributes {
   id: number;
-  phone: string;
+  phone: string | null;
   password_hash: string;
   name?: string;
   avatar?: string;
@@ -16,6 +16,8 @@ interface UserAttributes {
   last_location_updated_at?: Date | null;
   created_at?: Date;
   updated_at?: Date;
+  wechat_unionid?: string | null;
+  wechat_openid?: string | null;
   // 司机身份相关（非司机用户为 NULL）
   driver_status?: DriverStatus | null;
   is_available?: boolean | null;
@@ -35,12 +37,15 @@ interface UserCreationAttributes
     | 'name'
     | 'avatar'
     | 'status'
+    | 'phone'
     | 'last_latitude'
     | 'last_longitude'
     | 'last_location_name'
     | 'last_location_updated_at'
     | 'created_at'
     | 'updated_at'
+    | 'wechat_unionid'
+    | 'wechat_openid'
     | 'driver_status'
     | 'is_available'
     | 'id_card'
@@ -54,7 +59,7 @@ interface UserCreationAttributes
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
-  public phone!: string;
+  public phone!: string | null;
   public password_hash!: string;
   public name?: string;
   public avatar?: string;
@@ -65,6 +70,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public last_location_updated_at?: Date | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
+  public wechat_unionid?: string | null;
+  public wechat_openid?: string | null;
   public driver_status?: DriverStatus | null;
   public is_available?: boolean | null;
   public id_card?: string | null;
@@ -85,12 +92,12 @@ User.init(
     },
     phone: {
       type: DataTypes.STRING(11),
-      allowNull: false,
+      allowNull: true,
       unique: true
     },
     password_hash: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: true
     },
     name: {
       type: DataTypes.STRING(50),
@@ -156,6 +163,14 @@ User.init(
     },
     last_location_id: {
       type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true
+    },
+    wechat_unionid: {
+      type: DataTypes.STRING(64),
+      allowNull: true
+    },
+    wechat_openid: {
+      type: DataTypes.STRING(64),
       allowNull: true
     }
   },

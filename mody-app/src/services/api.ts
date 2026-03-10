@@ -79,8 +79,8 @@ function requestWithXHR<T>(
         return;
       }
 
-      if (status >= 400 || json.success === false) {
-        const message = (json && 'message' in json ? json.message : undefined) || serverErrorMessage(status);
+      if (status >= 400 || (json?.success === false)) {
+        const message = (json != null && 'message' in json ? json.message : undefined) || serverErrorMessage(status);
         logApiError({
           method,
           url,
@@ -400,7 +400,8 @@ function jsonBody(params: object, method: string, path: string) {
   } as RequestInit & { _params: unknown };
 }
 
-export async function sendCode(phone: string, type: 'register' | 'login' | 'reset_password') {
+/** 发送验证码（当前登录/注册流程已不用，仅备用） */
+async function sendCode(phone: string, type: 'register' | 'login' | 'reset_password') {
   return request<{ code?: string; expires_at: string }>(
     '/verification-codes/send',
     { method: 'POST', ...jsonBody({ phone, type }, 'POST', '/verification-codes/send') }
@@ -409,7 +410,7 @@ export async function sendCode(phone: string, type: 'register' | 'login' | 'rese
 
 export async function unifiedLogin(params: { phone: string; password: string }) {
   return request<{
-    user: { token: string; id: number; phone: string; name?: string; avatar?: string };
+    user: { token: string; id: number; phone?: string | null; name?: string; avatar?: string };
     hasDriver: boolean;
     driverStatus?: 'pending' | 'approved' | 'rejected';
     isAvailable?: boolean;
@@ -423,11 +424,26 @@ export async function resetPassword(params: { phone: string; code: string; new_p
   );
 }
 
+/** 微信登录：传 code（由前端微信 SDK 获取）或 openid/unionid，可选 nickname、avatar */
+export async function wechatLogin(params: {
+  code?: string;
+  openid?: string;
+  unionid?: string;
+  nickname?: string;
+  avatar?: string;
+}) {
+  return request<{
+    user: { token: string; id: number; phone?: string | null; name?: string; avatar?: string };
+    hasDriver: boolean;
+    driverStatus?: 'pending' | 'approved' | 'rejected';
+    isAvailable?: boolean;
+  }>('/auth/wechat-login', { method: 'POST', ...jsonBody(params, 'POST', '/auth/wechat-login') });
+}
+
 export async function userRegister(params: {
   phone: string;
   password: string;
   name?: string;
-  code: string;
 }) {
   return request<{
     user: { id: number; phone: string; name?: string; avatar?: string; token: string };
@@ -478,7 +494,7 @@ export async function getNearbyDrivers(params: {
 export async function getUserProfile(token: string) {
   return request<{
     id: number;
-    phone: string;
+    phone?: string | null;
     name?: string;
     avatar?: string;
     status: number;
@@ -492,12 +508,11 @@ export async function getUserProfile(token: string) {
   });
 }
 
-/** 乘客端：更新用户资料（昵称、头像） */
 export async function updateUserProfile(
   token: string,
-  payload: { name?: string; avatar?: string }
+  payload: { name?: string; avatar?: string; phone?: string }
 ) {
-  return request<{ id: number; phone: string; name?: string; avatar?: string }>('/users/profile', {
+  return request<{ id: number; phone?: string | null; name?: string; avatar?: string }>('/users/profile', {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
     ...jsonBody(payload, 'PUT', '/users/profile'),
@@ -554,7 +569,6 @@ export async function driverRegister(params: {
   phone: string;
   password: string;
   name: string;
-  code: string;
   id_card?: string;
   license_plate?: string;
   vehicle_type?: string;
@@ -599,7 +613,7 @@ export async function setAvailability(token: string, is_available: boolean) {
 export async function getDriverProfile(token: string) {
   return request<{
     id: number;
-    phone: string;
+    phone?: string | null;
     name: string;
     avatar?: string;
     id_card?: string;
@@ -616,12 +630,12 @@ export async function getDriverProfile(token: string) {
   });
 }
 
-/** 司机端：更新司机资料（昵称、头像） */
+/** 司机端：更新司机资料（昵称、头像、手机号） */
 export async function updateDriverProfile(
   token: string,
-  payload: { name?: string; avatar?: string }
+  payload: { name?: string; avatar?: string; phone?: string }
 ) {
-  return request<{ id: number; phone: string; name: string; avatar?: string }>('/drivers/profile', {
+  return request<{ id: number; phone?: string | null; name: string; avatar?: string }>('/drivers/profile', {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
     ...jsonBody(payload, 'PUT', '/drivers/profile'),

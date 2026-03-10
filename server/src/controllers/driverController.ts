@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import driverService from '../services/driverService';
-import verificationCodeService from '../services/verificationCodeService';
 import driverLocationService from '../services/driverLocationService';
 import * as driverNotificationService from '../services/driverNotificationService';
 import { sendSuccess, sendError } from '../utils/response';
@@ -9,13 +8,11 @@ import { AuthRequest } from '../middleware/auth';
 export class DriverController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { phone, password, name, id_card, license_plate, vehicle_type, code } = req.body;
-      
-      if (!phone || !password || !name || !code) {
-        return sendError(res, '手机号、密码、姓名、验证码不能为空', 400);
-      }
+      const { phone, password, name, id_card, license_plate, vehicle_type } = req.body;
 
-      await verificationCodeService.verifyCode(phone, 'register', code);
+      if (!phone || !password || !name) {
+        return sendError(res, '手机号、密码、姓名不能为空', 400);
+      }
 
       const result = await driverService.register(
         phone,
@@ -67,13 +64,14 @@ export class DriverController {
         return sendError(res, '未认证', 401);
       }
 
-      const { name, avatar, id_card, license_plate, vehicle_type } = req.body;
+      const { name, avatar, id_card, license_plate, vehicle_type, phone } = req.body;
       const driver = await driverService.updateDriver(driverId, {
         name,
         avatar,
         id_card,
         license_plate,
-        vehicle_type
+        vehicle_type,
+        phone
       });
       sendSuccess(res, driver, '更新成功');
     } catch (error: any) {
@@ -99,6 +97,11 @@ export class DriverController {
       if (e?.code === 'DRIVER_NOT_VERIFIED') {
         return sendError(res, e.message || '请先完成身份认证', 403, {
           code: 'DRIVER_NOT_VERIFIED',
+        });
+      }
+      if (e?.code === 'NO_PHONE') {
+        return sendError(res, e.message || '请先绑定手机号', 400, {
+          code: 'NO_PHONE',
         });
       }
       next(e);
