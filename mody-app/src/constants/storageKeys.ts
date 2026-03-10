@@ -11,3 +11,6 @@ export const STORAGE_KEY_WEATHER_CACHE = '@mody_weather_cache';
 
 /** 全局字号系数（小/标准/大 → 0.9 / 1 / 1.2） */
 export const STORAGE_KEY_FONT_SCALE = '@mody_font_scale';
+
+/** 上次 API 报错详情（调试用，供登录页等展示） */
+export const STORAGE_KEY_LAST_API_ERROR = '@mody_last_api_error';

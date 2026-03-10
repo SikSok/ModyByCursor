@@ -18,6 +18,8 @@ import {
   unifiedLogin,
   resetPassword,
   getUserFacingMessage,
+  getLastApiError,
+  clearLastApiError,
 } from '../services/api';
 import { theme } from '../theme';
 import { useToast } from '../context/ToastContext';
@@ -50,6 +52,9 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
+  const [lastApiError, setLastApiError] = useState<string | null>(null);
+  const [showLastErrorDetail, setShowLastErrorDetail] = useState(false);
+
   const isPassenger = role === 'passenger';
   const canAuth = useMemo(
     () => phone.length >= 6 && password.length >= 6,
@@ -71,6 +76,22 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getLastApiError().then((raw) => {
+      if (!cancelled && raw) setLastApiError(raw);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function onClearLastApiError() {
+    await clearLastApiError();
+    setLastApiError(null);
+    setShowLastErrorDetail(false);
+  }
 
   async function saveRememberedPhone(phoneNumber: string) {
     try {
@@ -158,6 +179,7 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
         setLoginErrorCode(null);
         showToast(msg, 'error');
       }
+      getLastApiError().then((raw) => raw && setLastApiError(raw));
     } finally {
       setLoading(false);
     }
@@ -194,6 +216,7 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
       }
     } catch (e: any) {
       showToast(getUserFacingMessage(e, '注册失败') || '请求失败，请稍后重试', 'error');
+      getLastApiError().then((raw) => raw && setLastApiError(raw));
     } finally {
       setLoading(false);
     }
@@ -458,6 +481,10 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
           </Pressable>
         )}
 
+        {lastApiError != null && __DEV__ && (
+          <Text style={styles.lastErrorHint}>⚠ 发生接口报错，请向下滚动查看「上次接口报错」详情</Text>
+        )}
+
         <Pressable
           onPress={mode === 'login' ? onLogin : onRegister}
           style={[styles.btn, submitDisabled && styles.btnDisabled]}
@@ -469,6 +496,29 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
             <Text style={styles.btnText}>{mode === 'login' ? '登录' : '注册'}</Text>
           )}
         </Pressable>
+
+        {lastApiError != null && __DEV__ && (
+          <View style={styles.lastErrorWrap}>
+            <Pressable
+              onPress={() => setShowLastErrorDetail((v) => !v)}
+              style={styles.lastErrorToggle}
+            >
+              <Text style={styles.lastErrorToggleText}>
+                {showLastErrorDetail ? '▼ 收起上次接口报错' : '▶ 查看上次接口报错'}
+              </Text>
+            </Pressable>
+            {showLastErrorDetail && (
+              <>
+                <Text style={styles.lastErrorJson} selectable>
+                  {lastApiError}
+                </Text>
+                <Pressable onPress={onClearLastApiError} style={styles.btnMinor}>
+                  <Text style={styles.btnMinorText}>清除报错记录</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        )}
       </ScrollView>
       {resetPasswordForm}
     </>
@@ -542,6 +592,12 @@ const styles = StyleSheet.create({
   link: { fontSize: 14, color: theme.accent, fontWeight: '600' },
   actionWrap: { marginBottom: 8 },
   actionLink: { fontSize: 14, color: theme.accent, fontWeight: '600' },
+  lastErrorHint: {
+    fontSize: 12,
+    color: theme.textMuted,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   btn: {
     backgroundColor: theme.accent,
     paddingVertical: 14,
@@ -563,6 +619,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnMinorText: { color: theme.text, fontWeight: '600', fontSize: 14 },
+  lastErrorWrap: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.border },
+  lastErrorToggle: { marginBottom: 8 },
+  lastErrorToggleText: { fontSize: 13, color: theme.accent, fontWeight: '600' },
+  lastErrorJson: {
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: theme.textMuted,
+    backgroundColor: theme.surface2,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    maxHeight: 200,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

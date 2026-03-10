@@ -237,3 +237,20 @@ tail -10 logs/access.log
 
 调试用：浏览器访问 `GET /api/debug/requests` 可查看最近 100 条请求（内存）。
 
+## 生产部署与公网访问（部署后浏览器转圈必看）
+
+**deploy.sh 只做三件事**：拉代码、`npm run build`、PM2 重启 Node。**它不会配置 Nginx**。公网访问需 Nginx 在 80/443 监听并把请求反代到 `http://127.0.0.1:3000`。
+
+若**浏览器访问 https://api.mody.中国 一直转圈**，多半是：(1) Nginx 没有为 api.mody.中国 做反向代理；(2) 你访问的是 HTTPS 但 Nginx 只配了 80 或 443 未配置该域名/证书；(3) Nginx 未运行或配置有误。
+
+**在 ECS 上快速排查**：
+```bash
+curl -s http://127.0.0.1:3000/api/health   # Node 正常应立刻返回 JSON
+systemctl status nginx                      # 确认 Nginx 在跑
+ls /etc/nginx/conf.d/ | grep -i api        # 是否有 api 配置
+nginx -t && systemctl reload nginx          # 测试并重载
+```
+若本机 curl 有返回、公网仍转圈，就是 Nginx 未把 api.mody.中国 反代到 3000。
+
+**Nginx 配置**：见 `server/docs/nginx-api.conf`。复制到 `/etc/nginx/conf.d/`，修改 server_name 与 HTTPS 证书路径后执行 `nginx -t && systemctl reload nginx`，并确保安全组放行 80 和 443。
+

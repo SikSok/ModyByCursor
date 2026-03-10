@@ -1,4 +1,6 @@
 const API_BASE_URL = require('../config/apiBaseUrl').url;
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEY_LAST_API_ERROR } from '../constants/storageKeys';
 
 /** 请求超时时间（毫秒） */
 const REQUEST_TIMEOUT_MS = 5000;
@@ -160,6 +162,13 @@ function logApiError(details: {
     '────────────────────────────────',
   ].filter(Boolean);
   console.error('\n' + lines.join('\n') + '\n');
+
+  // 持久化到本地，便于在登录页等地方查看「上次报错」（不连 Metro 也能定位）
+  const payload = {
+    ...details,
+    savedAt: new Date().toISOString(),
+  };
+  AsyncStorage.setItem(STORAGE_KEY_LAST_API_ERROR, JSON.stringify(payload, null, 2)).catch(() => {});
 }
 
 /** 用户可读的报错说明：优先使用接口返回的 message，其次区分「没网/超时」与「服务端业务错误」 */
@@ -177,6 +186,22 @@ export function getUserFacingMessage(error: unknown, fallback: string): string {
   if (isConnectionFailureMessage(trimmed)) return NETWORK_ERROR_MSG;
   if (/网络|超时|连接|无法/.test(trimmed)) return trimmed;
   return trimmed;
+}
+
+/** 读取上次 API 报错详情（JSON 字符串），便于在登录页等展示，不连 Metro 也能定位 */
+export async function getLastApiError(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(STORAGE_KEY_LAST_API_ERROR);
+  } catch {
+    return null;
+  }
+}
+
+/** 清除本地保存的上次 API 报错 */
+export async function clearLastApiError(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY_LAST_API_ERROR);
+  } catch (_) {}
 }
 
 /**
