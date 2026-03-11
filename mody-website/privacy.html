@@ -78,7 +78,50 @@
         .nav-links a:hover { color: var(--color-primary); }
         @media (max-width: 768px) {
             .nav-links { display: none; }
+            .nav.open .nav-links {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--color-surface);
+                padding: var(--pad-x);
+                gap: 12px;
+                border-bottom: 1px solid var(--color-border);
+            }
+            .nav-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 0;
+            }
+            .nav-toggle span, .nav-toggle span::before, .nav-toggle span::after {
+                display: block;
+                width: 22px;
+                height: 2px;
+                background: var(--color-text);
+                border-radius: 1px;
+                transition: var(--transition);
+            }
+            .nav-toggle span { position: relative; }
+            .nav-toggle span::before, .nav-toggle span::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: -7px;
+            }
+            .nav-toggle span::after { top: 7px; }
+            .nav.open .nav-toggle span { background: transparent; }
+            .nav.open .nav-toggle span::before { top: 0; transform: rotate(45deg); }
+            .nav.open .nav-toggle span::after { top: 0; transform: rotate(-45deg); }
         }
+        .nav-toggle { display: none; }
 
         .hero {
             padding: clamp(96px, 16vw, 132px) var(--pad-x) clamp(32px, 6vw, 40px);
@@ -283,6 +326,7 @@
                 <a href="promo.html">推广合作</a>
                 <a href="contact.html">联系</a>
             </nav>
+            <button type="button" class="nav-toggle" id="navToggle" aria-label="打开菜单"><span></span></button>
         </div>
     </header>
 
@@ -454,6 +498,18 @@
             <p class="footer-copy">Copyright © 2025 摩迪 Mody. 保留所有权利.</p>
         </div>
     </footer>
+    <script>
+        (function() {
+            var nav = document.querySelector('.nav');
+            var toggle = document.getElementById('navToggle');
+            if (toggle && nav) {
+                toggle.addEventListener('click', function() { nav.classList.toggle('open'); });
+                document.querySelectorAll('.nav-links a').forEach(function(a) {
+                    a.addEventListener('click', function() { nav.classList.remove('open'); });
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
 
