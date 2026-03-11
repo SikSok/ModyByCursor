@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Identity } from '../context/IdentityContext';
+import { useFontScale, scaledFontSize, FONT_SCALE_VALUES, type FontScaleLevel } from '../context/FontScaleContext';
 import {
   userRegister,
   driverRegister,
@@ -22,6 +23,8 @@ import {
 } from '../services/api';
 import { theme } from '../theme';
 import { useToast } from '../context/ToastContext';
+import { track } from '../utils/analytics';
+import { ENABLE_WECHAT_LOGIN } from '../config/features';
 
 const STORAGE_KEY_REMEMBERED_PHONE = '@mody_remembered_phone';
 
@@ -34,6 +37,8 @@ type Props = {
 type LoginErrorCode = 'PHONE_NOT_REGISTERED' | 'WRONG_PASSWORD' | null;
 
 export function LoginScreen({ role, onSuccess, onBack }: Props) {
+  const { fontScaleLevel } = useFontScale();
+  const styles = STYLES_CACHE[fontScaleLevel] ?? STYLES_CACHE.standard;
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -120,6 +125,7 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
       };
       saveRememberedPhone(phone);
       const token = data.user?.token ?? null;
+      track('login_success', { method: 'password', role, hasDriver: data.hasDriver ?? false }).catch(() => {});
       onSuccess(token, {
         hasDriver: data.hasDriver ?? false,
         driverStatus: data.driverStatus,
@@ -213,6 +219,7 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
         isAvailable?: boolean;
       };
       const token = data.user?.token ?? null;
+      track('login_success', { method: 'wechat', role, hasDriver: data.hasDriver ?? false }).catch(() => {});
       onSuccess(token, {
         hasDriver: data.hasDriver ?? false,
         driverStatus: data.driverStatus,
@@ -365,13 +372,18 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
           )}
         </Pressable>
 
-        <Pressable
-          onPress={onWechatLogin}
-          style={[styles.btnWechat, loading && styles.btnDisabled]}
-          disabled={loading}
-        >
-          <Text style={styles.btnWechatText}>微信登录</Text>
-        </Pressable>
+        {/* 微信登录尚未在正式环境开通，这里通过特性开关暂时隐藏入口。
+            说明：待完成微信开放平台配置与服务端 /auth/wechat-login 联调后，
+            可在 config/features.ts 中将 ENABLE_WECHAT_LOGIN 设为 true 以恢复显示按钮。 */}
+        {ENABLE_WECHAT_LOGIN && (
+          <Pressable
+            onPress={onWechatLogin}
+            style={[styles.btnWechat, loading && styles.btnDisabled]}
+            disabled={loading}
+          >
+            <Text style={styles.btnWechatText}>微信登录</Text>
+          </Pressable>
+        )}
 
         {lastApiError != null && __DEV__ && (
           <View style={styles.lastErrorWrap}>
@@ -400,136 +412,145 @@ export function LoginScreen({ role, onSuccess, onBack }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    paddingTop: 16,
-    backgroundColor: theme.bg,
-    paddingBottom: 40,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    minHeight: 44,
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  backBtnText: { fontSize: 16, color: theme.accent, fontWeight: '600' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
-  roleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  roleIconText: { fontSize: 22 },
-  roleIconP: { backgroundColor: theme.blueSoft },
-  roleIconD: { backgroundColor: theme.greenSoft },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: theme.text,
-    letterSpacing: -0.02,
-  },
-  tabs: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    backgroundColor: theme.surface2,
-  },
-  tabActive: { backgroundColor: theme.accent },
-  tabText: { color: theme.textMuted, fontWeight: '600' },
-  tabTextActive: { color: '#ffffff' },
-  inputWrap: { marginBottom: 16 },
-  inputLabel: {
-    fontSize: 13,
-    color: theme.textMuted,
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  hintSmall: { fontSize: 12, color: theme.textMuted, marginTop: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: theme.borderRadiusSm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: theme.surface,
-    color: theme.text,
-    fontSize: 16,
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  inputFlex: { flex: 1 },
-  linkWrap: { marginTop: 8 },
-  link: { fontSize: 14, color: theme.accent, fontWeight: '600' },
-  actionWrap: { marginBottom: 8 },
-  actionLink: { fontSize: 14, color: theme.accent, fontWeight: '600' },
-  lastErrorHint: {
-    fontSize: 12,
-    color: theme.textMuted,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  btn: {
-    backgroundColor: theme.accent,
-    paddingVertical: 14,
-    borderRadius: theme.borderRadiusSm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    marginTop: 8,
-  },
-  btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
-  btnWechat: {
-    backgroundColor: '#07C160',
-    paddingVertical: 14,
-    borderRadius: theme.borderRadiusSm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    marginTop: 12,
-  },
-  btnWechatText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
-  btnMinor: {
-    backgroundColor: theme.surface2,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: theme.borderRadiusSm,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-  },
-  btnMinorText: { color: theme.text, fontWeight: '600', fontSize: 14 },
-  lastErrorWrap: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.border },
-  lastErrorToggle: { marginBottom: 8 },
-  lastErrorToggleText: { fontSize: 13, color: theme.accent, fontWeight: '600' },
-  lastErrorJson: {
-    fontSize: 11,
-    fontFamily: 'monospace',
-    color: theme.textMuted,
-    backgroundColor: theme.surface2,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    maxHeight: 200,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalCard: {
-    backgroundColor: theme.surface,
-    borderRadius: theme.borderRadius,
-    padding: 20,
-  },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: theme.text },
-  modalClose: { fontSize: 20, color: theme.textMuted },
-  modalHint: { fontSize: 13, color: theme.textMuted, marginBottom: 16 },
-});
+function createStyles(fontScaleLevel: FontScaleLevel) {
+  const fontScale = FONT_SCALE_VALUES[fontScaleLevel] ?? 1;
+  return StyleSheet.create({
+    container: {
+      padding: 20,
+      paddingTop: 16,
+      backgroundColor: theme.bg,
+      paddingBottom: 40,
+    },
+    backBtn: {
+      alignSelf: 'flex-start',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      minHeight: 44,
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    backBtnText: { fontSize: scaledFontSize(16, fontScale), color: theme.accent, fontWeight: '600' },
+    headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
+    roleIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    roleIconText: { fontSize: scaledFontSize(22, fontScale) },
+    roleIconP: { backgroundColor: theme.blueSoft },
+    roleIconD: { backgroundColor: theme.greenSoft },
+    title: {
+      fontSize: scaledFontSize(20, fontScale),
+      fontWeight: '700',
+      color: theme.text,
+      letterSpacing: -0.02,
+    },
+    tabs: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    tab: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: 10,
+      backgroundColor: theme.surface2,
+    },
+    tabActive: { backgroundColor: theme.accent },
+    tabText: { fontSize: scaledFontSize(14, fontScale), color: theme.textMuted, fontWeight: '600' },
+    tabTextActive: { color: '#ffffff' },
+    inputWrap: { marginBottom: 16 },
+    inputLabel: {
+      fontSize: scaledFontSize(13, fontScale),
+      color: theme.textMuted,
+      marginBottom: 8,
+      fontWeight: '500',
+    },
+    hintSmall: { fontSize: scaledFontSize(12, fontScale), color: theme.textMuted, marginTop: 6 },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: theme.borderRadiusSm,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: theme.surface,
+      color: theme.text,
+      fontSize: scaledFontSize(16, fontScale),
+    },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    inputFlex: { flex: 1 },
+    linkWrap: { marginTop: 8 },
+    link: { fontSize: scaledFontSize(14, fontScale), color: theme.accent, fontWeight: '600' },
+    actionWrap: { marginBottom: 8 },
+    actionLink: { fontSize: scaledFontSize(14, fontScale), color: theme.accent, fontWeight: '600' },
+    lastErrorHint: {
+      fontSize: scaledFontSize(12, fontScale),
+      color: theme.textMuted,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    btn: {
+      backgroundColor: theme.accent,
+      paddingVertical: 14,
+      borderRadius: theme.borderRadiusSm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      marginTop: 8,
+    },
+    btnDisabled: { opacity: 0.5 },
+    btnText: { color: '#ffffff', fontWeight: '700', fontSize: scaledFontSize(16, fontScale) },
+    btnWechat: {
+      backgroundColor: '#07C160',
+      paddingVertical: 14,
+      borderRadius: theme.borderRadiusSm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 48,
+      marginTop: 12,
+    },
+    btnWechatText: { color: '#ffffff', fontWeight: '700', fontSize: scaledFontSize(16, fontScale) },
+    btnMinor: {
+      backgroundColor: theme.surface2,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      borderRadius: theme.borderRadiusSm,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: 'center',
+    },
+    btnMinorText: { color: theme.text, fontWeight: '600', fontSize: scaledFontSize(14, fontScale) },
+    lastErrorWrap: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.border },
+    lastErrorToggle: { marginBottom: 8 },
+    lastErrorToggleText: { fontSize: scaledFontSize(13, fontScale), color: theme.accent, fontWeight: '600' },
+    lastErrorJson: {
+      fontSize: scaledFontSize(11, fontScale),
+      fontFamily: 'monospace',
+      color: theme.textMuted,
+      backgroundColor: theme.surface2,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 10,
+      maxHeight: 200,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modalCard: {
+      backgroundColor: theme.surface,
+      borderRadius: theme.borderRadius,
+      padding: 20,
+    },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    modalTitle: { fontSize: scaledFontSize(18, fontScale), fontWeight: '700', color: theme.text },
+    modalClose: { fontSize: scaledFontSize(20, fontScale), color: theme.textMuted },
+    modalHint: { fontSize: scaledFontSize(13, fontScale), color: theme.textMuted, marginBottom: 16 },
+  });
+}
+
+const STYLES_CACHE: Record<FontScaleLevel, ReturnType<typeof createStyles>> = {
+  small: createStyles('small'),
+  standard: createStyles('standard'),
+  large: createStyles('large'),
+};

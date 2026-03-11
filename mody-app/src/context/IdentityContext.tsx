@@ -51,7 +51,9 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       let finalToken = token || null;
       if (!finalToken && (userToken || driverToken)) {
         finalToken = userToken || driverToken;
-        await AsyncStorage.setItem(STORAGE_KEY_TOKEN, finalToken);
+        if (finalToken) {
+          await AsyncStorage.setItem(STORAGE_KEY_TOKEN, finalToken);
+        }
         await Promise.all([
           AsyncStorage.removeItem(STORAGE_KEY_USER_TOKEN),
           AsyncStorage.removeItem(STORAGE_KEY_DRIVER_TOKEN),

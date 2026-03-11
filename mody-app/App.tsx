@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, Pressable, LogBox } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IdentityProvider, useIdentity } from './src/context/IdentityContext';
 import { FontScaleProvider, useFontScale, scaledFontSize } from './src/context/FontScaleContext';
 import { DriverNotificationProvider, useDriverNotifications } from './src/context/DriverNotificationContext';
@@ -14,6 +15,7 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { DriverVerificationScreen } from './src/screens/DriverVerificationScreen';
 import { FeedbackScreen } from './src/screens/FeedbackScreen';
 import type { Identity } from './src/context/IdentityContext';
+import { STORAGE_KEY_LAST_TAB_PASSENGER, STORAGE_KEY_LAST_TAB_DRIVER } from './src/constants/storageKeys';
 import { theme } from './src/theme';
 
 type TabId = 'home' | 'messages' | 'profile';
@@ -37,18 +39,52 @@ function AppContent() {
   const [tab, setTab] = useState<TabId>('home');
   const [showVerification, setShowVerification] = useState(false);
   const [showFeedbackScreen, setShowFeedbackScreen] = useState(false);
+  const hasLoadedInitialTabRef = useRef(false);
 
   const hasAnyToken = !!token;
   const isDriver = currentIdentity === 'driver';
+
+  /** 冷启动时恢复当前身份上次停留的 tab */
+  useEffect(() => {
+    if (!ready || !token || loginRole !== null) return;
+    if (hasLoadedInitialTabRef.current) return;
+    hasLoadedInitialTabRef.current = true;
+    const key = currentIdentity === 'driver' ? STORAGE_KEY_LAST_TAB_DRIVER : STORAGE_KEY_LAST_TAB_PASSENGER;
+    AsyncStorage.getItem(key).then((v) => {
+      const t = (v as TabId) || 'home';
+      setTab(currentIdentity === 'passenger' && t === 'messages' ? 'home' : t);
+    });
+  }, [ready, token, loginRole, currentIdentity]);
+
+  const setTabAndPersist = useCallback(
+    (newTab: TabId) => {
+      setTab(newTab);
+      const key = currentIdentity === 'driver' ? STORAGE_KEY_LAST_TAB_DRIVER : STORAGE_KEY_LAST_TAB_PASSENGER;
+      AsyncStorage.setItem(key, newTab).catch(() => {});
+    },
+    [currentIdentity]
+  );
 
   const openVerification = useCallback(() => setShowVerification(true), []);
   const closeVerification = useCallback(() => setShowVerification(false), []);
   const openFeedback = useCallback(() => setShowFeedbackScreen(true), []);
   const closeFeedback = useCallback(() => setShowFeedbackScreen(false), []);
-  const openDriverNotifications = useCallback(() => setTab('messages'), []);
-  const onSwitchIdentityToHome = useCallback(() => setTab('home'), []);
+  const openDriverNotifications = useCallback(() => setTabAndPersist('messages'), [setTabAndPersist]);
   const handleLoginAs = useCallback((role: Identity) => setLoginRole(role), []);
-  const openProfile = useCallback(() => setTab('profile'), []);
+  const openProfile = useCallback(() => setTabAndPersist('profile'), [setTabAndPersist]);
+
+  /** 切换身份：保存当前 tab，切换后恢复目标身份上次的 tab */
+  const onSwitchIdentity = useCallback(async () => {
+    const current = currentIdentity;
+    const target: Identity = current === 'passenger' ? 'driver' : 'passenger';
+    const keySave = current === 'driver' ? STORAGE_KEY_LAST_TAB_DRIVER : STORAGE_KEY_LAST_TAB_PASSENGER;
+    await AsyncStorage.setItem(keySave, 'profile');
+    await setIdentity(target);
+    const keyLoad = target === 'driver' ? STORAGE_KEY_LAST_TAB_DRIVER : STORAGE_KEY_LAST_TAB_PASSENGER;
+    const v = await AsyncStorage.getItem(keyLoad);
+    const t = ((v as TabId) || 'home');
+    setTab(target === 'passenger' && t === 'messages' ? 'home' : t);
+  }, [currentIdentity, setIdentity]);
 
   if (ready && hasAnyToken && loginRole === null && currentIdentity === 'driver' && showVerification) {
     return (
@@ -89,7 +125,7 @@ function AppContent() {
 
           {showMessagesTab && activeTab === 'messages' && token ? (
             <View style={styles.tabPanel} pointerEvents="auto">
-              <NotificationHistoryScreen token={token} onBack={() => setTab('home')} />
+              <NotificationHistoryScreen token={token} onBack={() => setTabAndPersist('home')} />
             </View>
           ) : showMessagesTab && activeTab === 'messages' ? (
             <View style={[styles.tabPanel, styles.tabPanelHidden]} pointerEvents="none" />
@@ -109,7 +145,7 @@ function AppContent() {
                 </>
               ) : (
                 <ProfileScreen
-                  onSwitchIdentity={onSwitchIdentityToHome}
+                  onSwitchIdentity={onSwitchIdentity}
                   onLoginAs={handleLoginAs}
                   onOpenVerification={openVerification}
                   onOpenFeedback={openFeedback}
@@ -123,7 +159,7 @@ function AppContent() {
 
         <View style={styles.tabBar}>
           <Pressable
-            onPress={() => setTab('home')}
+            onPress={() => setTabAndPersist('home')}
             style={[styles.tab, (activeTab === 'home') && styles.tabActive]}
             android_ripple={null}
           >
@@ -132,7 +168,7 @@ function AppContent() {
           </Pressable>
           {showMessagesTab && (
             <Pressable
-              onPress={() => setTab('messages')}
+              onPress={() => setTabAndPersist('messages')}
               style={[styles.tab, activeTab === 'messages' && styles.tabActive]}
               android_ripple={null}
             >
@@ -148,7 +184,7 @@ function AppContent() {
             </Pressable>
           )}
           <Pressable
-            onPress={() => setTab('profile')}
+            onPress={() => setTabAndPersist('profile')}
             style={[styles.tab, activeTab === 'profile' && styles.tabActive]}
             android_ripple={null}
           >

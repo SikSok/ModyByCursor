@@ -31,10 +31,11 @@ import {
   DriverNotificationPermissionModal,
   shouldShowNotificationPermissionModal,
 } from '../components/DriverNotificationPermissionModal';
-import { STORAGE_KEY_PAYMENT_QR_URI } from '../constants/storageKeys';
+import { STORAGE_KEY_PAYMENT_QR_URI, STORAGE_KEY_ONBOARDING_DRIVER_DONE } from '../constants/storageKeys';
 import { fetchWeather } from '../utils/weather';
+import { track } from '../utils/analytics';
 
-const STORAGE_KEY_TUTORIAL_DONE = '@mody_driver_tutorial_done';
+const STORAGE_KEY_TUTORIAL_DONE_LEGACY = '@mody_driver_tutorial_done';
 
 /** 闽清县梅城镇默认坐标（无定位时天气与占位） */
 const DEFAULT_LAT = 26.2234;
@@ -151,7 +152,9 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
   const hasSetDefaultAvailabilityThisSession = useRef(false);
 
   const markTutorialDone = useCallback(async () => {
-    await AsyncStorage.setItem(STORAGE_KEY_TUTORIAL_DONE, '1');
+    await AsyncStorage.setItem(STORAGE_KEY_ONBOARDING_DRIVER_DONE, '1');
+    // 兼容旧版本 key，避免后续版本重复弹出
+    await AsyncStorage.setItem(STORAGE_KEY_TUTORIAL_DONE_LEGACY, '1');
     setTutorialDone(true);
   }, []);
 
@@ -167,7 +170,9 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
     }
     (async () => {
       try {
-        const done = await AsyncStorage.getItem(STORAGE_KEY_TUTORIAL_DONE);
+        const done =
+          (await AsyncStorage.getItem(STORAGE_KEY_ONBOARDING_DRIVER_DONE)) ??
+          (await AsyncStorage.getItem(STORAGE_KEY_TUTORIAL_DONE_LEGACY));
         setTutorialDone(done === '1');
         if (done !== '1') setShowTutorial(true);
       } catch {
@@ -187,20 +192,29 @@ export const DriverHomeScreen = React.memo(function DriverHomeScreen({
       .catch(() => {});
   }, [token]);
 
-  /** 冷启动或首次进入司机首页时，若已绑手机则默认设为营业中（不覆盖后端已返回的 is_available） */
-  useEffect(() => {
-    if (!token || currentIdentity !== 'driver') return;
-    if (hasSetDefaultAvailabilityThisSession.current) return;
-    hasSetDefaultAvailabilityThisSession.current = true;
-    getDriverProfile(token).then((res) => {
-      const phone = res?.data?.phone;
-      const hasValidPhone = typeof phone === 'string' && /^1\d{10}$/.test(phone.trim());
-      if (hasValidPhone) {
-        setAvailability(token, true).catch(() => {});
-        setIsAvailable(true);
-      }
-    }).catch(() => {});
-  }, [token, currentIdentity]);
+  /**
+   * 说明：原先这里在冷启动/首次进入司机首页且已绑定手机时，会自动将司机设为「营业中」，
+   * 这会立刻触发定位权限请求，与「开始营业」按钮解耦，容易在身份认证等场景打扰用户。
+   *
+   * 当前改为：不再自动切换为营业中，只保留后端返回的 is_available。
+   * 定位与上报仅在：
+   * - 后端本身已将司机标记为营业中，或
+   * - 司机在首页主动点击「开始营业」按钮
+   * 时才会触发。
+   */
+  // useEffect(() => {
+  //   if (!token || currentIdentity !== 'driver') return;
+  //   if (hasSetDefaultAvailabilityThisSession.current) return;
+  //   hasSetDefaultAvailabilityThisSession.current = true;
+  //   getDriverProfile(token).then((res) => {
+  //     const phone = res?.data?.phone;
+  //     const hasValidPhone = typeof phone === 'string' && /^1\d{10}$/.test(phone.trim());
+  //     if (hasValidPhone) {
+  //       setAvailability(token, true).catch(() => {});
+  //       setIsAvailable(true);
+  //     }
+  //   }).catch(() => {});
+  // }, [token, currentIdentity]);
 
   useEffect(() => {
     if (!token || currentIdentity !== 'driver') return;
@@ -339,6 +353,8 @@ const WEATHER_TIMEOUT_MS = 10000;
       const next = !isAvailable;
       await setAvailability(token, next);
       setIsAvailable(next);
+      track('driver_availability_change', { is_available: next }).catch(() => {});
+      showToast(next ? '已开启营业' : '已休息', 'success');
     } catch (e: any) {
       if ((e as { code?: string }).code === 'NO_PHONE') {
         showToast('请先绑定手机号', 'error');

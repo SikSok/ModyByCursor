@@ -32,8 +32,16 @@ import { useIdentity } from '../context/IdentityContext';
 import { theme } from '../theme';
 import { AMAP_KEY } from '../config/amapKey';
 import { reverseGeocode } from '../utils/amapRegeo';
-import { STORAGE_KEY_DEFAULT_DRIVER } from '../constants/storageKeys';
+import { maskPhone } from '../utils/phone';
+import {
+  STORAGE_KEY_DEFAULT_DRIVER,
+  STORAGE_KEY_RECENT_CONTACTED_DRIVERS,
+  STORAGE_KEY_ONBOARDING_PASSENGER_DONE,
+} from '../constants/storageKeys';
 import { GradientCallButton } from '../components/GradientCallButton';
+import { track } from '../utils/analytics';
+import { PassengerTutorial } from '../components/PassengerTutorial';
+import { useFontScale, scaledFontSize, FONT_SCALE_VALUES, type FontScaleLevel } from '../context/FontScaleContext';
 
 /** 弹窗内默认头像直接 require，避免跨模块引用在部分 Android 上不解析 */
 const FALLBACK_AVATAR_IMG = require('../assets/default-avatars/default-driver-1.png');
@@ -116,6 +124,16 @@ type LocationHistoryItem = {
   created_at: string;
 };
 
+type RecentContactItem = {
+  driverId: number;
+  name: string;
+  phone?: string;
+  contactedAt: number;
+};
+
+const RECENT_CONTACTS_MAX = 5;
+const RECENT_CONTACTS_SHOW = 3;
+
 function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
   const names = ['张师傅', '李师傅', '王师傅', '刘师傅', '陈师傅'];
   const phones = ['17710222617', '17710222617', '17710222617', '17710222617', '17710222617'];
@@ -142,6 +160,9 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
 export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   const { showToast } = useToast();
   const { token } = useIdentity();
+  const { fontScaleLevel } = useFontScale();
+  const styles = STYLES_CACHE[fontScaleLevel] ?? STYLES_CACHE.standard;
+  const [showTutorial, setShowTutorial] = useState(false);
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
     lat: DEFAULT_LAT,
     lng: DEFAULT_LNG,
@@ -154,9 +175,29 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   const [locationSheetVisible, setLocationSheetVisible] = useState(false);
   const [relocateLoading, setRelocateLoading] = useState(false);
   const [locationHistory, setLocationHistory] = useState<LocationHistoryItem[]>([]);
+  const [recentContacts, setRecentContacts] = useState<RecentContactItem[]>([]);
   const mapRef = useRef<any>(null);
   const lastLocationSentAt = useRef<number>(0);
   const lastRelocateTapAt = useRef<number>(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const done = await AsyncStorage.getItem(STORAGE_KEY_ONBOARDING_PASSENGER_DONE);
+        if (!cancelled && done !== '1') setShowTutorial(true);
+      } catch (_) {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const markTutorialDone = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_ONBOARDING_PASSENGER_DONE, '1');
+    } catch (_) {}
+  }, []);
 
   /** 稳定列表数据引用，且每项为纯对象拷贝，避免 FlatList/VirtualizedList 内部对 data 的 property 操作报错 */
   const ctaListData = useMemo(() => {
@@ -196,6 +237,55 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
       })
       .catch(() => setDefaultDriver(null));
   }, []);
+
+  /** 从 AsyncStorage 读取最近联系的司机 */
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_RECENT_CONTACTED_DRIVERS)
+      .then((raw) => {
+        if (!raw) {
+          setRecentContacts([]);
+          return;
+        }
+        try {
+          const parsed = JSON.parse(raw) as RecentContactItem[];
+          if (Array.isArray(parsed)) {
+            const sorted = [...parsed]
+              .filter((x) => x && typeof x.driverId === 'number' && typeof x.name === 'string')
+              .sort((a, b) => (b.contactedAt ?? 0) - (a.contactedAt ?? 0))
+              .slice(0, RECENT_CONTACTS_MAX);
+            setRecentContacts(sorted);
+          } else {
+            setRecentContacts([]);
+          }
+        } catch {
+          setRecentContacts([]);
+        }
+      })
+      .catch(() => setRecentContacts([]));
+  }, []);
+
+  const addToRecentContacts = useCallback(
+    async (driverId: number, name: string, phone?: string) => {
+      const item: RecentContactItem = { driverId, name, phone, contactedAt: Date.now() };
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY_RECENT_CONTACTED_DRIVERS);
+        let list: RecentContactItem[] = raw ? (() => {
+          try {
+            const p = JSON.parse(raw);
+            return Array.isArray(p) ? p : [];
+          } catch {
+            return [];
+          }
+        })() : [];
+        list = list.filter((x) => x.driverId !== driverId);
+        list.unshift(item);
+        list = list.slice(0, RECENT_CONTACTS_MAX);
+        await AsyncStorage.setItem(STORAGE_KEY_RECENT_CONTACTED_DRIVERS, JSON.stringify(list));
+        setRecentContacts(list);
+      } catch (_) {}
+    },
+    []
+  );
 
   const fetchNearbyWithCenter = useCallback(
     async (lat: number, lng: number) => {
@@ -483,7 +573,19 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <>
+      <PassengerTutorial
+        visible={showTutorial}
+        onSkip={() => {
+          setShowTutorial(false);
+          markTutorialDone();
+        }}
+        onComplete={() => {
+          setShowTutorial(false);
+          markTutorialDone();
+        }}
+      />
+      <View style={styles.container}>
       {/* App 顶部：定位入口（图标 + 文案 + 右箭头），点击打开底部抽屉 */}
       <View style={styles.topBar}>
         <Pressable
@@ -545,8 +647,44 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
         )}
       </View>
 
-      {/* 底部常驻：附近司机 CTA */}
+      {/* 底部常驻：最近联系 + 附近司机 CTA */}
       <View style={styles.ctaSection}>
+        {recentContacts.length > 0 ? (
+          <View style={styles.recentSection}>
+            <Text style={styles.recentSectionTitle}>最近联系</Text>
+            {recentContacts.slice(0, RECENT_CONTACTS_SHOW).map((rc) => (
+              <Pressable
+                key={rc.driverId}
+                style={({ pressed }) => [styles.recentRow, pressed && styles.ctaRowPressed]}
+              >
+                <View style={styles.recentRowCenter}>
+                  <Text style={styles.ctaCardName} numberOfLines={1}>{rc.name}</Text>
+                  <Text style={styles.recentRowPhone}>{rc.phone ? maskPhone(rc.phone) : '—'}</Text>
+                </View>
+                {rc.phone ? (
+                  <GradientCallButton
+                    onPress={async () => {
+                      if (token) {
+                        contactDriver(token, rc.driverId).then(
+                          () => {
+                            showToast('已通知司机', 'success');
+                            addToRecentContacts(rc.driverId, rc.name, rc.phone);
+                            track('passenger_contact_driver', { driverId: rc.driverId, source: 'recent' }).catch(() => {});
+                          },
+                          () => {}
+                        );
+                      }
+                      Linking.openURL('tel:' + rc.phone!);
+                    }}
+                    style={styles.ctaCallBtn}
+                  />
+                ) : (
+                  <Text style={styles.ctaNoPhone}>暂无法拨号</Text>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <View style={styles.ctaHeaderRow}>
           <Text style={styles.ctaTitle}>附近司机</Text>
           {defaultDriver ? (
@@ -560,7 +698,8 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
           </View>
         ) : ctaListData.length === 0 ? (
           <View style={styles.ctaEmpty}>
-            <Text style={styles.ctaEmptyTitle}>附近暂无司机，换个位置试试</Text>
+            <Text style={styles.ctaEmptyIcon}>🏍️</Text>
+            <Text style={styles.ctaEmptyTitle}>暂无附近司机，试试扩大范围或稍后再看</Text>
             <Text style={styles.ctaEmptyHint}>可尝试重新定位或选择其他地点</Text>
             <Pressable
               style={[styles.ctaRelocateBtn, relocateLoading && styles.ctaRelocateBtnDisabled]}
@@ -612,6 +751,9 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
                     <Text style={styles.ctaCardDistance}>
                       {item.isVirtual ? '当前较远' : `约 ${item.distance_km.toFixed(1)} km`}
                     </Text>
+                    <Text style={styles.ctaCardPhone}>
+                      {item.driver.phone ? maskPhone(item.driver.phone) : '—'}
+                    </Text>
                   </View>
                   <View style={styles.ctaRowRight}>
                     {canCall ? (
@@ -619,7 +761,11 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
                         onPress={async () => {
                           if (token) {
                             contactDriver(token, item.driver.id).then(
-                              () => showToast('已通知司机', 'success'),
+                              () => {
+                                showToast('已通知司机', 'success');
+                                addToRecentContacts(item.driver.id, item.driver.name, item.driver.phone);
+                                track('passenger_contact_driver', { driverId: item.driver.id, source: 'nearby_cta' }).catch(() => {});
+                              },
                               () => {}
                             );
                           }
@@ -731,6 +877,9 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
                       {selected.isVirtual ? '当前较远' : `约 ${selected.distance_km.toFixed(1)} km`}
                       {selected.driver.vehicle_type ? ` · ${selected.driver.vehicle_type}` : ''}
                     </Text>
+                    {selected.driver.phone ? (
+                      <Text style={styles.modalPhone}>联系电话：{maskPhone(selected.driver.phone)}</Text>
+                    ) : null}
                   </View>
                   <View style={styles.modalDefaultBlock}>
                     {defaultDriver && defaultDriver.id === selected.driver.id ? (
@@ -773,7 +922,11 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
                       onPress={async () => {
                         if (token) {
                           contactDriver(token, selected.driver.id).then(
-                            () => showToast('已通知司机', 'success'),
+                            () => {
+                              showToast('已通知司机', 'success');
+                              addToRecentContacts(selected.driver.id, selected.driver.name, selected.driver.phone);
+                              track('passenger_contact_driver', { driverId: selected.driver.id, source: 'modal' }).catch(() => {});
+                            },
                             () => {}
                           );
                         }
@@ -790,11 +943,14 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+      </View>
+    </>
   );
 });
 
-const styles = StyleSheet.create({
+function createStyles(fontScaleLevel: FontScaleLevel) {
+  const fontScale = FONT_SCALE_VALUES[fontScaleLevel] ?? 1;
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.bg,
@@ -821,17 +977,17 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   locationEntryIcon: {
-    fontSize: 16,
+    fontSize: scaledFontSize(16, fontScale),
     marginRight: 8,
   },
   locationEntryText: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     color: theme.text,
     fontWeight: '500',
     maxWidth: 180,
   },
   locationEntryArrow: {
-    fontSize: 18,
+    fontSize: scaledFontSize(18, fontScale),
     color: theme.textMuted,
     marginLeft: 4,
     fontWeight: '300',
@@ -866,18 +1022,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sheetTitle: {
-    fontSize: 13,
+    fontSize: scaledFontSize(13, fontScale),
     color: theme.textMuted,
     marginBottom: 4,
   },
   sheetCurrent: {
-    fontSize: 18,
+    fontSize: scaledFontSize(18, fontScale),
     fontWeight: '600',
     color: theme.text,
     marginBottom: 16,
   },
   sheetHint: {
-    fontSize: 13,
+    fontSize: scaledFontSize(13, fontScale),
     color: theme.textMuted,
     marginBottom: 20,
     lineHeight: 20,
@@ -893,11 +1049,11 @@ const styles = StyleSheet.create({
   },
   relocateBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scaledFontSize(16, fontScale),
     fontWeight: '600',
   },
   sheetSectionTitle: {
-    fontSize: 13,
+    fontSize: scaledFontSize(13, fontScale),
     color: theme.textMuted,
     marginTop: 24,
     marginBottom: 8,
@@ -912,7 +1068,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.surface2,
   },
   historyRowName: {
-    fontSize: 15,
+    fontSize: scaledFontSize(15, fontScale),
     color: theme.text,
     fontWeight: '500',
   },
@@ -924,7 +1080,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     color: theme.textMuted,
   },
   modalOverlay: {
@@ -948,12 +1104,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: scaledFontSize(18, fontScale),
     fontWeight: '700',
     color: theme.text,
   },
   modalClose: {
-    fontSize: 15,
+    fontSize: scaledFontSize(15, fontScale),
     color: theme.accent,
     fontWeight: '600',
   },
@@ -976,14 +1132,19 @@ const styles = StyleSheet.create({
     backgroundColor: theme.borderLight,
   },
   modalName: {
-    fontSize: 20,
+    fontSize: scaledFontSize(20, fontScale),
     fontWeight: '700',
     color: theme.text,
     marginBottom: 4,
   },
   modalDistanceVehicle: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     color: theme.textMuted,
+  },
+  modalPhone: {
+    fontSize: scaledFontSize(14, fontScale),
+    color: theme.textMuted,
+    marginTop: 4,
   },
   modalDefaultBlock: {
     backgroundColor: theme.surface2,
@@ -1008,7 +1169,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   noPhone: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     color: theme.textMuted,
     marginTop: 8,
   },
@@ -1021,6 +1182,34 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.border,
   },
+  recentSection: {
+    marginBottom: 10,
+  },
+  recentSectionTitle: {
+    fontSize: scaledFontSize(13, fontScale),
+    color: theme.textMuted,
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    backgroundColor: theme.surface2,
+    borderRadius: 8,
+  },
+  recentRowCenter: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+  recentRowPhone: {
+    fontSize: scaledFontSize(12, fontScale),
+    color: theme.textMuted,
+    marginTop: 2,
+  },
   ctaHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1028,12 +1217,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ctaTitle: {
-    fontSize: 16,
+    fontSize: scaledFontSize(16, fontScale),
     fontWeight: '600',
     color: theme.text,
   },
   ctaSubtitle: {
-    fontSize: 12,
+    fontSize: scaledFontSize(12, fontScale),
     color: theme.textMuted,
   },
   ctaLoading: {
@@ -1044,7 +1233,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ctaLoadingText: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     color: theme.textMuted,
   },
   ctaEmpty: {
@@ -1052,14 +1241,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     alignItems: 'center',
   },
+  ctaEmptyIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
   ctaEmptyTitle: {
-    fontSize: 15,
+    fontSize: scaledFontSize(15, fontScale),
     fontWeight: '600',
     color: theme.text,
     marginBottom: 4,
   },
   ctaEmptyHint: {
-    fontSize: 13,
+    fontSize: scaledFontSize(13, fontScale),
     color: theme.textMuted,
     marginBottom: 12,
   },
@@ -1075,7 +1268,7 @@ const styles = StyleSheet.create({
   },
   ctaRelocateBtnText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     fontWeight: '600',
   },
   ctaListScroll: {
@@ -1147,7 +1340,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   ctaCardName: {
-    fontSize: 15,
+    fontSize: scaledFontSize(16, fontScale),
     fontWeight: '700',
     color: theme.text,
   },
@@ -1158,19 +1351,24 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   ctaDefaultTagText: {
-    fontSize: 11,
+    fontSize: scaledFontSize(11, fontScale),
     fontWeight: '600',
     color: theme.accent,
   },
   ctaCardDistance: {
-    fontSize: 12,
+    fontSize: scaledFontSize(12, fontScale),
     color: theme.textMuted,
+  },
+  ctaCardPhone: {
+    fontSize: scaledFontSize(12, fontScale),
+    color: theme.textMuted,
+    marginTop: 2,
   },
   ctaCardRight: {
     marginLeft: 8,
   },
   ctaNoPhone: {
-    fontSize: 12,
+    fontSize: scaledFontSize(12, fontScale),
     color: theme.textMuted,
   },
   modalDefaultRow: {
@@ -1180,7 +1378,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalDefaultLabel: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     color: theme.textMuted,
   },
   modalDefaultBtn: {
@@ -1194,8 +1392,15 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   modalDefaultBtnText: {
-    fontSize: 14,
+    fontSize: scaledFontSize(14, fontScale),
     fontWeight: '600',
     color: theme.accent,
   },
 });
+}
+
+const STYLES_CACHE: Record<FontScaleLevel, ReturnType<typeof createStyles>> = {
+  small: createStyles('small'),
+  standard: createStyles('standard'),
+  large: createStyles('large'),
+};

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="隐私政策｜摩迪 Mody - 说明我们在附近司机展示、一键联系、反馈等场景下如何收集和使用您的信息。">
+    <title>隐私政策｜摩迪 Mody</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #fafbfc;
+            --color-surface: #ffffff;
+            --color-primary: #0d9488;
+            --color-primary-dark: #0f766e;
+            --color-text: #1e293b;
+            --color-text-muted: #64748b;
+            --color-border: #e2e8f0;
+            --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+            --transition: 0.25s ease;
+            --container-max: 1200px;
+            --pad-x: clamp(16px, 4vw, 32px);
+            --pad-y: clamp(24px, 5vw, 48px);
+            --pad-section: clamp(48px, 10vw, 80px);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            font-size: clamp(0.9375rem, 1.8vw, 1rem);
+        }
+        img { max-width: 100%; height: auto; display: block; }
+
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .nav-inner {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: clamp(12px, 2vw, 16px) var(--pad-x);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 1.5vw, 10px);
+            text-decoration: none;
+            color: var(--color-text);
+            font-weight: 700;
+            font-size: clamp(1rem, 2.2vw, 1.25rem);
+        }
+        .nav-logo img { height: clamp(28px, 5vw, 36px); width: auto; }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: clamp(16px, 3vw, 32px);
+        }
+        .nav-links a {
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: clamp(0.875rem, 1.8vw, 1rem);
+            transition: color var(--transition);
+        }
+        .nav-links a:hover { color: var(--color-primary); }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+        }
+
+        .hero {
+            padding: clamp(96px, 16vw, 132px) var(--pad-x) clamp(32px, 6vw, 40px);
+            background: linear-gradient(180deg, #f0fdfa 0%, #fafbfc 100%);
+        }
+        .hero-inner {
+            max-width: min(860px, 92vw);
+            margin: 0 auto;
+        }
+        .hero-kicker {
+            font-size: 0.8125rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+            margin-bottom: 6px;
+        }
+        .hero-title {
+            font-size: clamp(1.75rem, 4.2vw, 2.4rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .hero-summary {
+            font-size: 0.95rem;
+            color: var(--color-text-muted);
+            margin-bottom: 12px;
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            font-size: 0.8125rem;
+            color: var(--color-text-muted);
+        }
+
+        .layout {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: 0 var(--pad-x) clamp(64px, 12vw, 96px);
+            display: grid;
+            grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+            gap: clamp(24px, 4vw, 40px);
+        }
+        @media (max-width: 960px) {
+            .layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .toc-card {
+            position: sticky;
+            top: clamp(76px, 14vw, 96px);
+            align-self: flex-start;
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow);
+            padding: 16px 18px;
+        }
+        .toc-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .toc-list {
+            list-style: none;
+        }
+        .toc-list li + li {
+            margin-top: 6px;
+        }
+        .toc-list a {
+            display: inline-block;
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+            text-decoration: none;
+            line-height: 1.5;
+        }
+        .toc-list a:hover {
+            color: var(--color-primary);
+        }
+        @media (max-width: 960px) {
+            .toc-card {
+                position: static;
+                display: block;
+            }
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .section {
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow);
+            padding: clamp(20px, 3.2vw, 26px);
+        }
+        .section h2 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 6px;
+        }
+        .section p {
+            font-size: 0.9375rem;
+            margin-bottom: 0.75em;
+        }
+        .section p:last-child {
+            margin-bottom: 0;
+        }
+        .section ul {
+            padding-left: 1.2em;
+            margin: 0.5em 0 0.75em;
+            font-size: 0.9375rem;
+        }
+        .section ul li {
+            margin-bottom: 0.55em;
+        }
+
+        .note {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: #ecfeff;
+            border: 1px solid #bae6fd;
+            font-size: 0.85rem;
+            color: #075985;
+        }
+
+        .footer {
+            padding: var(--pad-y) var(--pad-x) clamp(16px, 2vw, 24px);
+            background: var(--color-text);
+            color: rgba(255,255,255,0.8);
+            font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+        }
+        .footer-inner { max-width: var(--container-max); margin: 0 auto; text-align: center; }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(12px, 2vw, 24px);
+            margin-bottom: clamp(16px, 2vw, 24px);
+        }
+        .footer-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+        }
+        .footer-links a:hover { text-decoration: underline; }
+        .footer-beian {
+            margin-bottom: clamp(8px, 1.5vw, 12px);
+            color: rgba(255,255,255,0.7);
+        }
+        .footer-beian a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+        }
+        .footer-beian a:hover { text-decoration: underline; }
+        .footer-beian a + a { margin-left: 1em; }
+        .footer-copy { color: rgba(255,255,255,0.6); }
+
+        @media print {
+            .nav, .footer { display: none; }
+            body { background: #ffffff; }
+            .hero {
+                padding: 0 0 12px;
+                background: #ffffff;
+            }
+            .layout {
+                padding: 0;
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .toc-card {
+                position: static;
+                box-shadow: none;
+            }
+            .section {
+                box-shadow: none;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <img src="assets/logo.svg" alt="摩迪">
+                <span>摩迪 Mody</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html#product">产品介绍</a>
+                <a href="index.html#download">软件下载</a>
+                <a href="promo.html">推广合作</a>
+                <a href="contact.html">联系</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <p class="hero-kicker">PRIVACY POLICY</p>
+            <h1 class="hero-title">隐私政策</h1>
+            <p class="hero-summary">本隐私政策适用于您使用摩迪 Mody 官网以及摩迪 App（乘客端与司机端统一 App）的相关服务，包括附近司机展示、一键联系、账号管理、反馈与客服等功能。</p>
+            <div class="hero-meta">
+                <span>版本：1.0.0</span>
+                <span>生效日期：2026-03-11</span>
+            </div>
+        </div>
+    </section>
+
+    <main class="layout">
+        <aside class="toc-card" aria-label="隐私政策目录">
+            <div class="toc-title">目录</div>
+            <ul class="toc-list">
+                <li><a href="#section-1">一、我们如何收集和使用信息</a></li>
+                <li><a href="#section-2">二、我们如何共享与使用第三方服务</a></li>
+                <li><a href="#section-3">三、信息存储与保存期限</a></li>
+                <li><a href="#section-4">四、您如何管理个人信息</a></li>
+                <li><a href="#section-5">五、未成年人保护</a></li>
+                <li><a href="#section-6">六、本政策的更新</a></li>
+                <li><a href="#section-7">七、如何联系我们</a></li>
+            </ul>
+        </aside>
+
+        <div class="content">
+            <section id="section-1" class="section">
+                <h2>一、我们如何收集和使用信息</h2>
+                <p>摩迪 Mody 会遵循「合法、正当、必要」和「最小够用」原则，在您使用服务的过程中收集和使用您的信息，以实现附近司机展示、一键联系、账号管理、客服支持和安全风控等功能。我们不会将信息用于本政策未说明的其他用途，除非事先获得您的同意。</p>
+
+                <h3>（一）账号信息</h3>
+                <p>1. <strong>手机号：</strong>在注册、登录或绑定账号时，我们会收集您提供的手机号码，用于作为账号标识、登录验证以及必要的安全校验。当前产品中：</p>
+                <ul>
+                    <li>司机端通常需要绑定手机号，用于账号登录、乘客来电联系等；</li>
+                    <li>乘客端在部分场景可以使用手机号登录或绑定，以便找回账号和提升安全性。</li>
+                </ul>
+                <p>2. <strong>昵称与头像：</strong>您可以为账号设置昵称与头像，用于在 App 内展示（例如司机端展示给乘客查看）。若您不设置，我们可能提供默认头像或默认称呼。</p>
+
+                <h3>（二）位置信息</h3>
+                <p>1. <strong>乘客定位：</strong>为向您展示附近司机位置、计算距离和辅助您选择上车地点，我们可能会在征得授权的前提下，收集您设备的定位信息。若您拒绝授权，我们将无法基于实时定位展示附近司机，但您仍可在默认位置等有限场景下浏览部分信息。</p>
+                <p>2. <strong>司机位置上报：</strong>当您以司机身份登录并上线时，我们会根据您的授权定期上报当前位置，用于：</p>
+                <ul>
+                    <li>在乘客地图上展示您大致所在区域；</li>
+                    <li>协助计算距离并在乘客端展示附近可联系的司机列表。</li>
+                </ul>
+                <p>我们不会以高精度轨迹方式对司机或乘客进行不合理跟踪，位置精度和上报频率以实现产品功能所必需为限。</p>
+
+                <h3>（三）设备与日志信息</h3>
+                <p>为保障服务的运行安全并改进用户体验，我们可能在您使用 App 或官网时，收集以下类型的信息：</p>
+                <ul>
+                    <li>设备信息（如设备型号、操作系统版本、唯一设备标识符等）；</li>
+                    <li>网络信息（如网络类型、运营商、IP 地址的粗略地理信息等）；</li>
+                    <li>应用内操作日志（如功能点击、异常崩溃日志）及错误堆栈。</li>
+                </ul>
+                <p>这些信息主要用于故障排查、性能优化、安全分析，不会单独用于识别您的真实身份。</p>
+
+                <h3>（四）用户提交的内容</h3>
+                <p>1. <strong>反馈与投诉：</strong>当您在 App 内提交「建议与反馈」或通过官网 <a href="contact.html">联系页</a> 提交留言时，我们会收集您填写的内容和您自愿提供的联系方式（例如邮箱、手机号、微信等），用于与您沟通、处理问题并改进产品。</p>
+                <p>2. <strong>其他信息：</strong>您在使用服务时主动提供的其他信息（如车辆信息、证件照片等）将仅在为完成司机认证、改善服务等必要目的下使用，具体以产品实际展示的字段和提示为准。</p>
+
+                <h3>（五）我们如何使用这些信息</h3>
+                <p>我们会将上述信息用于以下用途：</p>
+                <ul>
+                    <li>用于注册、登录、身份验证和账号安全保护；</li>
+                    <li>用于地图上展示附近司机、计算距离以及在乘客端生成可联系的司机列表；</li>
+                    <li>用于在拨打电话前，通过平台向司机发送「联系司机」类通知（如有），帮助司机识别来电来源；</li>
+                    <li>用于处理您的反馈与投诉，进行必要的沟通与回访；</li>
+                    <li>用于统计分析和产品优化，例如功能使用频率、异常场景分析等；</li>
+                    <li>用于防范欺诈、骚扰行为以及其他可能危及您或他人安全的行为。</li>
+                </ul>
+                <div class="note">
+                    我们不会将您的手机号码用于向您发送无关的广告营销短信或群发信息。如未来确有营销类通知需求，我们会在法律允许范围内事先征得您的额外同意，并为您提供退订方式。
+                </div>
+            </section>
+
+            <section id="section-2" class="section">
+                <h2>二、我们如何共享与使用第三方服务</h2>
+                <p>摩迪 Mody 不会将您的个人信息出售给任何第三方。只有在实现相应功能所必需，或基于法律法规、行政或司法要求的情况下，我们才会向第三方提供必要的信息。</p>
+
+                <h3>（一）地图与定位服务</h3>
+                <p>为实现附近司机展示、位置选择等功能，我们可能会接入第三方地图或定位服务（例如高德地图等）。在使用相关服务时：</p>
+                <ul>
+                    <li>第三方 SDK 可能会根据其自身的隐私政策收集设备、网络和位置等信息；</li>
+                    <li>我们会在接入前尽量评估其合规性，并仅在实现功能所必需的范围内使用。</li>
+                </ul>
+
+                <h3>（二）第三方登录</h3>
+                <p>若您选择使用微信登录等第三方登录方式，我们可能会从第三方获取您授权共享的昵称、头像等公开信息，用于快速创建或登录您的摩迪账号。此类信息的收集和使用同时受第三方平台自身隐私政策的约束。</p>
+
+                <h3>（三）统计分析与崩溃监控</h3>
+                <p>为改进产品稳定性，我们可能接入统计分析或崩溃监控工具，用于收集匿名化或去标识化后的使用数据和崩溃信息。这类数据主要用于定位问题和优化体验，不会用于识别具体个人。</p>
+
+                <h3>（四）在法律要求或保护权益时的共享</h3>
+                <p>在以下情形中，我们可能会在符合法律法规的前提下共享必要的信息：</p>
+                <ul>
+                    <li>遵守适用的法律法规、行政或司法机关的要求；</li>
+                    <li>为履行法院判决、裁定或其他法律程序；</li>
+                    <li>为保护摩迪 Mody、您或其他用户的人身和财产安全或合法权益合理必需时。</li>
+                </ul>
+            </section>
+
+            <section id="section-3" class="section">
+                <h2>三、信息存储与保存期限</h2>
+                <p>1. <strong>存储地点：</strong>在法律法规允许的范围内，我们会将收集到的用户信息存储在中国境内的服务器上。</p>
+                <p>2. <strong>保存期限：</strong>我们会在达成本政策所述目的所需的最短期间内保存您的信息：</p>
+                <ul>
+                    <li>账号相关信息通常在账号存续期间内保存；</li>
+                    <li>日志和异常数据在满足分析和排查需要后会进行脱敏或删除，保存时间一般不会超过法律允许的最长期限；</li>
+                    <li>投诉与反馈记录会在处理完成后保留一段合理时间，用于复查和潜在纠纷处理。</li>
+                </ul>
+                <p>当超过保存期限，或我们停止提供相应服务时，我们会根据适用法律的要求删除或匿名化处理您的个人信息。</p>
+            </section>
+
+            <section id="section-4" class="section">
+                <h2>四、您如何管理个人信息</h2>
+                <p>我们尊重您对个人信息的权利，您可以通过以下方式对自己的信息进行访问、更正和删除：</p>
+                <ul>
+                    <li><strong>账号信息：</strong>您可以在 App 个人中心查看和修改部分个人资料（例如昵称、头像、手机号等），具体以 App 实际功能为准。</li>
+                    <li><strong>退出登录：</strong>您可以随时在个人中心选择退出登录，退出后我们将停止将新的使用数据与您的账号进行关联。</li>
+                    <li><strong>反馈与申请：</strong>如您希望访问、更正或删除更多信息，或申请注销账号，可通过 App 内的「建议与反馈」或官网 <a href="contact.html">联系页</a> 提交请求，并附上必要的身份验证信息。</li>
+                </ul>
+                <p>在符合法律法规的前提下，我们会在合理时间内处理您的请求。请理解，出于安全或合规要求，部分信息可能无法立即删除或完全删除（例如已脱敏的日志记录）。</p>
+            </section>
+
+            <section id="section-5" class="section">
+                <h2>五、未成年人保护</h2>
+                <p>摩迪 Mody 的服务主要面向具有完全民事行为能力的成年人。若您是未成年人，请在监护人同意和指导下使用本服务。</p>
+                <p>如监护人发现被监护的未成年人在未经同意的情况下使用我们的服务或向我们提供了个人信息，请及时通过官网 <a href="contact.html">联系页</a> 或其他联系方式与我们取得联系，我们会在核实后尽快配合处理。</p>
+            </section>
+
+            <section id="section-6" class="section">
+                <h2>六、本政策的更新</h2>
+                <p>我们可能会根据业务发展、技术变更或法律法规要求适时更新本隐私政策。发生重大变更时，我们会通过 App 内重要位置提示、弹窗、官网公告等方式向您说明变更内容。</p>
+                <p>在变更生效后，若您继续使用我们的服务，即视为您同意更新后的隐私政策。对于需要单独同意的内容，我们会再次征得您的明确同意。</p>
+            </section>
+
+            <section id="section-7" class="section">
+                <h2>七、如何联系我们</h2>
+                <p>如您对本隐私政策或个人信息保护有任何疑问、意见或投诉，欢迎通过以下方式与我们联系：</p>
+                <ul>
+                    <li>在 App 内通过「个人中心」-「建议与反馈」提交问题；</li>
+                    <li>访问官网 <a href="contact.html">联系页</a>，填写并提交留言表单；</li>
+                    <li>通过联系页展示的微信渠道与我们取得联系。</li>
+                </ul>
+                <p>我们会在合理的时间内进行核查并尽力给予回复。</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-links">
+                <a href="index.html#product">产品介绍</a>
+                <a href="index.html#download">软件下载</a>
+                <a href="promo.html">推广合作</a>
+                <a href="contact.html">联系</a>
+                <a href="about.html">关于</a>
+                <a href="privacy.html">隐私政策</a>
+                <a href="terms.html">服务条款</a>
+            </div>
+            <p class="footer-beian">
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">闽ICP备2026006423号-1</a>
+                <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=35012402000095" target="_blank" rel="noopener noreferrer">闽公网安备35012402000095号</a>
+            </p>
+            <p class="footer-copy">Copyright © 2025 摩迪 Mody. 保留所有权利.</p>
+        </div>
+    </footer>
+</body>
+</html>
+

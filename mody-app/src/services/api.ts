@@ -678,6 +678,80 @@ export async function submitVerification(
   });
 }
 
+/** 司机端：上传证件图片（身份证正反面、车牌照等），返回可访问 URL */
+export async function uploadDriverImage(
+  token: string,
+  file: { uri: string; type?: string | null; fileName?: string | null }
+): Promise<{ url: string }> {
+  try {
+    // 优先使用 react-native-blob-util 的原生上传能力，保持与其余请求栈一致
+    const RNFB = require('react-native-blob-util');
+    const api = RNFB?.default ?? RNFB;
+    if (!api || typeof api.fetch !== 'function' || typeof api.wrap !== 'function') {
+      throw new Error('当前环境暂不支持文件上传，请稍后重试');
+    }
+
+    const cleanUri = file.uri.startsWith('file://') ? file.uri.replace('file://', '') : file.uri;
+    const filename = file.fileName || `driver-${Date.now()}.jpg`;
+    const mime = file.type || 'image/jpeg';
+
+    const res = await api.fetch(
+      'POST',
+      `${API_BASE_URL}/drivers/upload-image`,
+      {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+      [
+        {
+          name: 'file',
+          filename,
+          type: mime,
+          data: api.wrap(cleanUri),
+        },
+      ]
+    );
+
+    const status = res.info().status;
+    let bodyText = '';
+    try {
+      bodyText = res.text();
+    } catch {
+      bodyText = '';
+    }
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log('[API BlobUtil 上传] status=', status, 'bodyLen=', bodyText.length);
+    }
+
+    let json: { success?: boolean; message?: string; data?: { url?: string; path?: string } } | null = null;
+    try {
+      json = bodyText ? (JSON.parse(bodyText) as typeof json) : {};
+    } catch {
+      throw new Error(serverErrorMessage(status, '服务端异常'));
+    }
+
+    if (status >= 400 || json?.success === false) {
+      const message = (json && json.message) || serverErrorMessage(status);
+      throw new Error(message);
+    }
+
+    const raw = json?.data?.url || json?.data?.path;
+    if (!raw) {
+      throw new Error('上传失败，请稍后重试');
+    }
+
+    // 若服务端已返回绝对 URL 则直接使用；否则基于 API_BASE_URL 计算完整地址
+    const isAbsolute = /^https?:\/\//i.test(raw);
+    const base = API_BASE_URL.replace(/\/api\/?$/i, '');
+    const url = isAbsolute ? raw : `${base}${raw}`;
+
+    return { url };
+  } catch (e: any) {
+    const msg = getUserFacingMessage(e, '上传失败，请稍后重试');
+    throw new Error(msg);
+  }
+}
+
 /** 建议与反馈：App 用户提交 */
 export async function submitFeedback(
   token: string,

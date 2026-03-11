@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import http from 'http';
 import dotenv from 'dotenv';
 import corsMiddleware from './middleware/cors';
@@ -27,6 +28,11 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 静态资源：对外暴露 uploads 目录，供司机证件图片等访问。
+// 说明：当前将文件保存至项目根目录下的 uploads/，路径需与 Multer 配置保持一致。
+const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsRoot));
 
 // 请求日志：每次 API 请求会在终端打印，并可在浏览器访问 /api/debug/requests 查看
 app.use('/api', requestLogger);

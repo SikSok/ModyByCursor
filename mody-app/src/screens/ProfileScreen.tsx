@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert, Modal, TextInput, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIdentity } from '../context/IdentityContext';
 import type { Identity } from '../context/IdentityContext';
@@ -9,6 +9,9 @@ import { theme } from '../theme';
 import { STORAGE_KEY_PAYMENT_QR_URI } from '../constants/storageKeys';
 import { getDefaultDriverAvatarSource } from '../utils/defaultAvatars';
 import { useToast } from '../context/ToastContext';
+import { BASE_WEB_URL } from '../config/website';
+import { track } from '../utils/analytics';
+import { maskPhone } from '../utils/phone';
 
 const DEFAULT_DRIVER_DISPLAY_NAME = '摩的师傅';
 
@@ -165,23 +168,43 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
       return;
     }
     if (!token) return;
-    setPhoneError(null);
-    setPhoneModalVisible(false);
-    try {
-      setSavingProfile(true);
-      if (currentIdentity === 'driver') {
-        await updateDriverProfile(token, { phone: raw });
-        setDriverPhone(raw);
-      } else {
-        await updateUserProfile(token, { phone: raw });
-        setPassengerPhone(raw);
-      }
-      showToast('手机号已更新', 'success');
-    } catch (e: any) {
-      showToast(e?.message || '更新失败', 'error');
-    } finally {
-      setSavingProfile(false);
+    const current = (currentIdentity === 'driver' ? driverPhone : passengerPhone) || '';
+    if (raw === current) {
+      setPhoneError(null);
+      setPhoneModalVisible(false);
+      return;
     }
+    setPhoneError(null);
+    Alert.alert(
+      '确认修改手机号',
+      `确定将手机号改为 ${maskPhone(raw)}？`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确定',
+          style: 'default',
+          onPress: async () => {
+            setPhoneModalVisible(false);
+            try {
+              setSavingProfile(true);
+              if (currentIdentity === 'driver') {
+                await updateDriverProfile(token, { phone: raw });
+                setDriverPhone(raw);
+              } else {
+                await updateUserProfile(token, { phone: raw });
+                setPassengerPhone(raw);
+              }
+              track('profile_phone_updated', { identity: currentIdentity }).catch(() => {});
+              showToast('手机号已更新', 'success');
+            } catch (e: any) {
+              showToast(e?.message || '更新失败', 'error');
+            } finally {
+              setSavingProfile(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleSelectFontScale = async (level: FontScaleLevel) => {
@@ -194,8 +217,23 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
   const otherLabel = otherIdentity === 'passenger' ? '乘客' : '司机';
 
   function handleSwitchToOther() {
+    track('identity_switch', { from: currentIdentity, to: otherIdentity }).catch(() => {});
     setIdentity(otherIdentity);
     onSwitchIdentity();
+  }
+
+  async function openWebsitePath(path: string) {
+    const url = `${BASE_WEB_URL}${path.startsWith('/') ? path : `/${path}`}`;
+    try {
+      const can = await Linking.canOpenURL(url);
+      if (!can) {
+        showToast('无法打开链接', 'error');
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      showToast('打开失败，请稍后重试', 'error');
+    }
   }
 
   return (
@@ -364,6 +402,78 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
           </View>
         </Pressable>
       )}
+
+      <Pressable style={styles.card} onPress={() => openWebsitePath('/promo.html')}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIcon, styles.cardIconPromo]}>
+            <Text style={styles.cardIconText}>🎁</Text>
+          </View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle}>推荐有奖</Text>
+            <Text style={styles.cardHint}>邀请好友、区域合作</Text>
+          </View>
+          <Text style={styles.nicknameArrow}>›</Text>
+        </View>
+      </Pressable>
+
+      {currentIdentity === 'driver' && (
+        <Pressable
+          style={styles.card}
+          onPress={() => {
+            Alert.alert('邀请司机', '邀请司机功能即将上线，奖励规则敬请期待。');
+          }}
+        >
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIcon, styles.cardIconInvite]}>
+              <Text style={styles.cardIconText}>🧑‍🤝‍🧑</Text>
+            </View>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.cardTitle}>邀请司机</Text>
+              <Text style={styles.cardHint}>生成邀请链接（即将上线）</Text>
+            </View>
+            <Text style={styles.nicknameArrow}>›</Text>
+          </View>
+        </Pressable>
+      )}
+
+      <Pressable style={styles.card} onPress={() => openWebsitePath('/contact.html')}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIcon, styles.cardIconAbout]}>
+            <Text style={styles.cardIconText}>ℹ️</Text>
+          </View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle}>关于我们</Text>
+            <Text style={styles.cardHint}>了解摩迪与合作方式</Text>
+          </View>
+          <Text style={styles.nicknameArrow}>›</Text>
+        </View>
+      </Pressable>
+
+      <Pressable style={styles.card} onPress={() => openWebsitePath('/contact.html')}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIcon, styles.cardIconLegal]}>
+            <Text style={styles.cardIconText}>📄</Text>
+          </View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle}>用户协议</Text>
+            <Text style={styles.cardHint}>当前暂链至官网联系页</Text>
+          </View>
+          <Text style={styles.nicknameArrow}>›</Text>
+        </View>
+      </Pressable>
+
+      <Pressable style={styles.card} onPress={() => openWebsitePath('/contact.html')}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIcon, styles.cardIconLegal]}>
+            <Text style={styles.cardIconText}>🔒</Text>
+          </View>
+          <View style={styles.cardHeaderText}>
+            <Text style={styles.cardTitle}>隐私政策</Text>
+            <Text style={styles.cardHint}>当前暂链至官网联系页</Text>
+          </View>
+          <Text style={styles.nicknameArrow}>›</Text>
+        </View>
+      </Pressable>
 
       <Pressable style={({ pressed }) => [styles.btnOutline, pressed && styles.btnPressed]} onPress={logout}>
         <Text style={styles.btnOutlineIcon}>🚪</Text>
@@ -679,6 +789,10 @@ function createStyles(fontScaleLevel: FontScaleLevel) {
   cardIconVerify: { backgroundColor: 'rgba(217,119,6,0.15)' },
   cardIconPayment: { backgroundColor: theme.greenSoft },
   cardIconFeedback: { backgroundColor: theme.blueSoft },
+  cardIconPromo: { backgroundColor: 'rgba(217,119,6,0.15)' },
+  cardIconInvite: { backgroundColor: 'rgba(124,58,237,0.12)' },
+  cardIconAbout: { backgroundColor: theme.accentSoft },
+  cardIconLegal: { backgroundColor: theme.surface2 },
   cardHeaderText: { flex: 1 },
   cardTitle: { fontSize: scaledFontSize(18, fontScale), fontWeight: '700', color: theme.text, marginBottom: 4 },
   cardHint: { fontSize: scaledFontSize(13, fontScale), color: theme.textMuted, lineHeight: 20 },

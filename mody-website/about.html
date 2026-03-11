@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="关于我们｜摩迪 Mody - 附近摩的师傅实时可见，一键联系的短途出行信息服务平台。">
+    <title>关于我们｜摩迪 Mody</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #fafbfc;
+            --color-surface: #ffffff;
+            --color-primary: #0d9488;
+            --color-primary-light: #2dd4bf;
+            --color-primary-dark: #0f766e;
+            --color-text: #1e293b;
+            --color-text-muted: #64748b;
+            --color-border: #e2e8f0;
+            --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+            --transition: 0.25s ease;
+            --container-max: 1200px;
+            --pad-x: clamp(16px, 4vw, 32px);
+            --pad-y: clamp(24px, 5vw, 48px);
+            --pad-section: clamp(48px, 10vw, 80px);
+            --gap: clamp(16px, 3vw, 32px);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            font-size: clamp(0.9375rem, 1.8vw, 1rem);
+        }
+        img { max-width: 100%; height: auto; display: block; }
+
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .nav-inner {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: clamp(12px, 2vw, 16px) var(--pad-x);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 1.5vw, 10px);
+            text-decoration: none;
+            color: var(--color-text);
+            font-weight: 700;
+            font-size: clamp(1rem, 2.2vw, 1.25rem);
+        }
+        .nav-logo img { height: clamp(28px, 5vw, 36px); width: auto; }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: clamp(16px, 3vw, 32px);
+        }
+        .nav-links a {
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: clamp(0.875rem, 1.8vw, 1rem);
+            transition: color var(--transition);
+        }
+        .nav-links a:hover { color: var(--color-primary); }
+        .nav-links a.active { color: var(--color-primary); font-weight: 600; }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+        }
+
+        .hero {
+            padding: clamp(96px, 16vw, 132px) var(--pad-x) clamp(32px, 6vw, 48px);
+            background: linear-gradient(180deg, #f0fdfa 0%, #fafbfc 100%);
+        }
+        .hero-inner {
+            max-width: min(860px, 92vw);
+            margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(13,148,136,0.08);
+            color: var(--color-primary-dark);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .hero-title {
+            font-size: clamp(1.75rem, 4.2vw, 2.4rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+        .hero-subtitle {
+            font-size: clamp(1rem, 2.4vw, 1.125rem);
+            color: var(--color-text-muted);
+            margin-bottom: clamp(20px, 4vw, 28px);
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+        }
+
+        .page-main {
+            max-width: min(980px, 94vw);
+            margin: 0 auto;
+            padding: 0 var(--pad-x) clamp(64px, 12vw, 96px);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 3fr);
+            gap: var(--gap);
+        }
+
+        .card {
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow);
+            padding: clamp(20px, 3.2vw, 28px);
+        }
+        .card + .card { margin-top: var(--gap); }
+
+        .section-title {
+            font-size: clamp(1.125rem, 2.4vw, 1.375rem);
+            font-weight: 700;
+            margin-bottom: clamp(12px, 2vw, 16px);
+            color: var(--color-text);
+        }
+        .section-lead {
+            font-size: 0.95rem;
+            color: var(--color-text-muted);
+            margin-bottom: clamp(12px, 2vw, 16px);
+        }
+        .section-body p {
+            margin-bottom: 0.9em;
+        }
+        .section-body p:last-child {
+            margin-bottom: 0;
+        }
+        .section-list {
+            margin: 0.75em 0 0;
+            padding-left: 1.2em;
+            font-size: 0.95rem;
+        }
+        .section-list li {
+            margin-bottom: 0.6em;
+        }
+
+        .highlight {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #ecfeff;
+            border: 1px solid #bae6fd;
+            font-size: 0.875rem;
+            color: #075985;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+            gap: var(--gap);
+        }
+        .two-col-item h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--color-text);
+        }
+        .two-col-item p {
+            font-size: 0.9375rem;
+            color: var(--color-text-muted);
+        }
+
+        .faq-list {
+            margin-top: 8px;
+        }
+        .faq-item + .faq-item {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--color-border);
+        }
+        .faq-q {
+            font-weight: 600;
+            font-size: 0.9375rem;
+            margin-bottom: 4px;
+        }
+        .faq-a {
+            font-size: 0.9375rem;
+            color: var(--color-text-muted);
+        }
+
+        .footer {
+            padding: var(--pad-y) var(--pad-x) clamp(16px, 2vw, 24px);
+            background: var(--color-text);
+            color: rgba(255,255,255,0.8);
+            font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+        }
+        .footer-inner { max-width: var(--container-max); margin: 0 auto; text-align: center; }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(12px, 2vw, 24px);
+            margin-bottom: clamp(16px, 2vw, 24px);
+        }
+        .footer-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+        }
+        .footer-links a:hover { text-decoration: underline; }
+        .footer-beian {
+            margin-bottom: clamp(8px, 1.5vw, 12px);
+            color: rgba(255,255,255,0.7);
+        }
+        .footer-beian a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+        }
+        .footer-beian a:hover { text-decoration: underline; }
+        .footer-beian a + a { margin-left: 1em; }
+        .footer-copy { color: rgba(255,255,255,0.6); }
+    </style>
+</head>
+<body>
+    <header class="nav">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">
+                <img src="assets/logo.svg" alt="摩迪">
+                <span>摩迪 Mody</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html#product">产品介绍</a>
+                <a href="index.html#download">软件下载</a>
+                <a href="promo.html">推广合作</a>
+                <a href="contact.html">联系</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <span class="hero-badge">关于摩迪 Mody</span>
+            <h1 class="hero-title">附近摩的可见，一键联系的短途出行信息服务</h1>
+            <p class="hero-subtitle">摩迪 Mody 致力于连接附近乘客与摩的师傅，让街边、本地的短途出行更透明、更高效。我们提供信息撮合与沟通工具，本身不直接提供运输服务。</p>
+            <div class="hero-meta">
+                <span>服务形态：移动 App + 地图展示 + 联系司机</span>
+                <span>定位城市：以闽清县等县域场景为起点，逐步扩展</span>
+            </div>
+        </div>
+    </section>
+
+    <main class="page-main">
+        <div class="grid">
+            <article class="card" id="who-we-are">
+                <h2 class="section-title">我们是谁</h2>
+                <p class="section-lead">摩迪 Mody 是一款专注于「短途、本地、摩的」的出行信息服务工具，帮助乘客更快看到附近可接单的摩的师傅，并通过电话等方式自主联系。</p>
+                <div class="section-body">
+                    <p>在许多县城与城郊区域，摩的是最常见的短途交通工具，但信息高度分散：乘客不知道附近是否有空车，司机也难以知道哪里有需求。摩迪希望通过简单易用的地图与信息展示，让这一过程更可预期。</p>
+                    <p>需要特别说明的是：<strong>摩迪 Mody 并非运输公司或客运经营单位</strong>，也不直接参与线下载客交易。我们主要提供：</p>
+                    <ul class="section-list">
+                        <li>乘客端：地图展示附近在线司机、基础信息卡片与一键拨号入口；</li>
+                        <li>司机端：位置上报、可接单状态切换、乘客来电前的「联系司机」通知等；</li>
+                        <li>平台侧：基础的账号管理、投诉反馈通道和部分风控策略。</li>
+                    </ul>
+                    <div class="highlight">
+                        <strong>责任边界提示：</strong>线下是否成交、价格协商、行程路线与服务质量，均由乘客与司机在遵守法律法规的前提下自行协商与承担责任，平台不会介入现金交易或价目制定。
+                    </div>
+                </div>
+            </article>
+
+            <article class="card" id="what-we-provide">
+                <h2 class="section-title">我们提供什么</h2>
+                <p class="section-lead">一款 App，支持同一账号在乘客与司机之间切换，围绕「看得到、联系得上」来设计功能。</p>
+                <div class="two-col">
+                    <div class="two-col-item">
+                        <h3>乘客端能力</h3>
+                        <p>乘客可以通过地图快速浏览附近的摩的师傅，大致了解其在线状态，并通过底部卡片一键拨打电话，自主与司机沟通价格、路线与集合点。</p>
+                    </div>
+                    <div class="two-col-item">
+                        <h3>司机端能力</h3>
+                        <p>司机可以上报当前位置、切换是否可接客，接收乘客「联系司机」产生的通知，并在接到来电后与乘客自行约定服务细节。</p>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <p>未来，我们会在合规前提下逐步完善：常用上车点收藏、评价与投诉入口、简单的收入统计等，具体以 App 实际上线功能为准。</p>
+                </div>
+            </article>
+
+            <article class="card" id="safety-compliance">
+                <h2 class="section-title">合规与安全</h2>
+                <p class="section-lead">我们持续在隐私保护、安全风控和账号管理上做减法——只收集完成服务所必需的信息，并为异常行为留出处理空间。</p>
+                <div class="section-body">
+                    <p><strong>隐私与数据：</strong>我们遵循「最小必要」原则，只在提供地图展示、账号登录、联系司机、客服支持等场景下收集和处理信息。具体说明请参见《<a href="privacy.html">隐私政策</a>》。</p>
+                    <p><strong>账号安全：</strong>摩迪采用手机号作为账号的主要标识，部分场景可能结合微信登录等第三方登录方式。我们会采取合理的技术措施防止账号被恶意盗用，但仍提醒您妥善保管设备和验证码。</p>
+                    <p><strong>风险与风控：</strong>对于涉嫌骚扰、诈骗、恶意绕路等行为，我们会依据相关投诉材料和日志进行调查，并在合理范围内采取包括但不限于账号限制、封禁等处理措施。</p>
+                    <div class="highlight">
+                        <strong>温馨提示：</strong>请在与司机沟通价格和路线时保持理性，尽量在人员较为密集、安全的地点上下车。如发现可疑行为，可通过 App 的「建议与反馈」或官网 <a href="contact.html">联系页</a> 进行举报。
+                    </div>
+                </div>
+            </article>
+
+            <article class="card" id="contact">
+                <h2 class="section-title">如何联系摩迪</h2>
+                <div class="section-body">
+                    <p>如需商务合作、问题反馈或行程相关投诉，您可以通过以下方式联系我们：</p>
+                    <ul class="section-list">
+                        <li>在 App 内进入「个人中心」-「建议与反馈」，提交相关说明；</li>
+                        <li>访问官网 <a href="contact.html">联系页</a>，填写留言表单，并选填您的联系方式；</li>
+                        <li>扫码联系页面展示的微信，由工作人员进行后续沟通。</li>
+                    </ul>
+                    <p>我们会尽力在合理时间内阅读并回复您的意见或诉求，但实际响应时间可能受到人力和节假日等因素影响。</p>
+                </div>
+            </article>
+
+            <article class="card" id="faq">
+                <h2 class="section-title">常见问题 FAQ</h2>
+                <div class="faq-list">
+                    <div class="faq-item">
+                        <p class="faq-q">Q：如何成为摩迪上的司机？</p>
+                        <p class="faq-a">A：在 App 内切换至司机身份，根据指引完善必要的身份与车辆信息并提交审核。通过审核后，您即可在允许运营的区域上报位置、接收乘客来电。具体要求以 App 内展示为准。</p>
+                    </div>
+                    <div class="faq-item">
+                        <p class="faq-q">Q：摩迪是否会代收或代付车费？</p>
+                        <p class="faq-a">A：目前摩迪不代收、不代付任何车费。乘客与司机之间的费用结算完全由双方线下完成，请在遵守当地法规的前提下合理协商。</p>
+                    </div>
+                    <div class="faq-item">
+                        <p class="faq-q">Q：行程中发生纠纷怎么办？</p>
+                        <p class="faq-a">A：请第一时间确保人身安全，如涉及违法行为请及时向公安机关报案。同时，您可以通过 App「建议与反馈」或官网 <a href="contact.html">联系页</a> 向我们提供行程时间、双方号码等信息，便于后续协助核实。</p>
+                    </div>
+                </div>
+                <div class="highlight">
+                    <strong>备案说明：</strong>摩迪 Mody 官网及相关服务运行在已备案的服务器环境中，备案信息可在页面底部及工信部官方网站上查询。
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-links">
+                <a href="index.html#product">产品介绍</a>
+                <a href="index.html#download">软件下载</a>
+                <a href="promo.html">推广合作</a>
+                <a href="contact.html">联系</a>
+                <a href="about.html">关于</a>
+                <a href="privacy.html">隐私政策</a>
+                <a href="terms.html">服务条款</a>
+            </div>
+            <p class="footer-beian">
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">闽ICP备2026006423号-1</a>
+                <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=35012402000095" target="_blank" rel="noopener noreferrer">闽公网安备35012402000095号</a>
+            </p>
+            <p class="footer-copy">Copyright © 2025 摩迪 Mody. 保留所有权利.</p>
+        </div>
+    </footer>
+</body>
+</html>
+

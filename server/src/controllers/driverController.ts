@@ -158,6 +158,28 @@ export class DriverController {
     }
   }
 
+  /** 司机证件图片上传：接收单个文件并返回可访问 URL */
+  async uploadImage(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const driverId = req.user?.id;
+      if (!driverId) {
+        return sendError(res, '未认证', 401);
+      }
+
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) {
+        return sendError(res, '未收到文件', 400);
+      }
+
+      const relativePath = `/uploads/drivers/${file.filename}`;
+      // 说明：这里仅返回相对路径，由前端基于 API_BASE_URL 计算完整 URL，
+      // 保证与当前 App 所使用的后端地址（本地局域网 / 线上域名）一致。
+      sendSuccess(res, { path: relativePath }, '上传成功');
+    } catch (e) {
+      next(e);
+    }
+  }
+
   /** 司机端：通知列表分页，带未读数量 */
   async getNotifications(req: AuthRequest, res: Response, next: NextFunction) {
     try {
