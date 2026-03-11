@@ -90,9 +90,9 @@ export class AuthController {
       let resolvedOpenId = openid;
       let resolvedUnionId = unionid;
       if (code && process.env.WECHAT_APPID && process.env.WECHAT_SECRET) {
-        const resp = await fetch(
+        const resp = (await fetch(
           `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${process.env.WECHAT_APPID}&secret=${process.env.WECHAT_SECRET}&code=${code}&grant_type=authorization_code`
-        ).then((r) => r.json());
+        ).then((r) => r.json())) as { openid?: string; unionid?: string; errcode?: number };
         if (resp.openid) {
           resolvedOpenId = resp.openid;
           resolvedUnionId = resolvedUnionId || resp.unionid;
