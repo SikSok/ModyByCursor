@@ -38,7 +38,6 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
   const [driverName, setDriverName] = useState<string>(DEFAULT_DRIVER_DISPLAY_NAME);
   const [driverAvatar, setDriverAvatar] = useState<string | null>(null);
   const [driverPhone, setDriverPhone] = useState<string | null>(null);
-  const [paymentQrUri, setPaymentQrUri] = useState<string | null>(null);
   const [passengerName, setPassengerName] = useState<string>('');
   const [passengerAvatar, setPassengerAvatar] = useState<string | null>(null);
   const [passengerPhone, setPassengerPhone] = useState<string | null>(null);
@@ -83,25 +82,6 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
       .catch(() => {});
   }, [currentIdentity, token]);
 
-  useEffect(() => {
-    if (currentIdentity !== 'driver') return;
-    AsyncStorage.getItem(STORAGE_KEY_PAYMENT_QR_URI).then((uri) => setPaymentQrUri(uri || null)).catch(() => setPaymentQrUri(null));
-  }, [currentIdentity]);
-
-  const handleSetPaymentQR = async () => {
-    try {
-      const { launchImageLibrary } = require('react-native-image-picker');
-      const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
-      if (result.didCancel || !result?.assets?.length) return;
-      const uri = result.assets[0].uri;
-      if (uri) {
-        await AsyncStorage.setItem(STORAGE_KEY_PAYMENT_QR_URI, uri);
-        setPaymentQrUri(uri);
-      }
-    } catch (e) {
-      Alert.alert('提示', '选择图片需要安装 react-native-image-picker，请先执行 npm install 并重新编译。');
-    }
-  };
 
   const handleChangeAvatar = async () => {
     if (!token) return;
@@ -335,37 +315,6 @@ export const ProfileScreen = React.memo(function ProfileScreen({ onSwitchIdentit
         </View>
       )}
 
-      {currentIdentity === 'driver' && (
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, styles.cardIconPayment]}>
-              <Text style={styles.cardIconText}>💳</Text>
-            </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>收款码</Text>
-              <Text style={styles.cardHint}>
-                {paymentQrUri ? '已设置，首页可点击出示' : '设置后乘客扫码付款'}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.cardBody}>
-            {paymentQrUri ? (
-              <View style={styles.paymentQrPreview}>
-                <Image source={{ uri: paymentQrUri }} style={styles.paymentQrImage} resizeMode="cover" />
-                <Pressable style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]} onPress={handleSetPaymentQR}>
-                  <Text style={styles.btnIcon}>↻</Text>
-                  <Text style={styles.btnText}>更换收款码</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]} onPress={handleSetPaymentQR}>
-                <Text style={styles.btnIcon}>+</Text>
-                <Text style={styles.btnText}>设置收款码</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
-      )}
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>

@@ -7,7 +7,7 @@
     "start": "react-native start --port 8081",
     "dev": "node scripts/set-api.js dev-lan && react-native start --port 8081",
     "pre": "node scripts/set-api.js pre && react-native start --port 8081",
-    "release": "node scripts/set-api.js pre && echo 请到 android 目录执行 .\\\\gradlew.bat assembleRelease",
+    "release": "echo 请到 android 目录执行 .\\\\gradlew.bat assembleRelease",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",

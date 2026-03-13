@@ -37,7 +37,9 @@ import {
   STORAGE_KEY_DEFAULT_DRIVER,
   STORAGE_KEY_RECENT_CONTACTED_DRIVERS,
   STORAGE_KEY_ONBOARDING_PASSENGER_DONE,
+  STORAGE_KEY_USE_MOCK_DRIVERS,
 } from '../constants/storageKeys';
+import { ENABLE_MOCK_DRIVERS_BUTTON } from '../config/features';
 import { GradientCallButton } from '../components/GradientCallButton';
 import { track } from '../utils/analytics';
 import { PassengerTutorial } from '../components/PassengerTutorial';
@@ -134,6 +136,8 @@ type RecentContactItem = {
 const RECENT_CONTACTS_MAX = 5;
 const RECENT_CONTACTS_SHOW = 3;
 
+// 注意：以下假司机生成逻辑仅用于本地自测，线上环境不应调用。
+// 如需本地 UI 演示，可临时在 fetchNearbyWithCenter 中恢复调用，但不要提交。
 function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
   const names = ['张师傅', '李师傅', '王师傅', '刘师傅', '陈师傅'];
   const phones = ['17710222617', '17710222617', '17710222617', '17710222617', '17710222617'];
@@ -145,7 +149,7 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
     const distance_km = Math.round((Math.random() * 5 + 0.5) * 10) / 10;
     items.push({
       driver: {
-        id: 1,// 目前自测先写死1 后续根据真实数据赋值
+        id: i + 1,
         name: names[i % names.length],
         phone: phones[i % phones.length],
         vehicle_type: '摩托车',
@@ -159,7 +163,7 @@ function getMockDrivers(centerLat: number, centerLng: number): NearbyItem[] {
 
 export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   const { showToast } = useToast();
-  const { token } = useIdentity();
+  const { token, currentIdentity } = useIdentity();
   const { fontScaleLevel } = useFontScale();
   const styles = STYLES_CACHE[fontScaleLevel] ?? STYLES_CACHE.standard;
   const [showTutorial, setShowTutorial] = useState(false);
@@ -179,6 +183,7 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
   const mapRef = useRef<any>(null);
   const lastLocationSentAt = useRef<number>(0);
   const lastRelocateTapAt = useRef<number>(0);
+  const [useMockDrivers, setUseMockDrivers] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +196,15 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    if (!ENABLE_MOCK_DRIVERS_BUTTON) return;
+    AsyncStorage.getItem(STORAGE_KEY_USE_MOCK_DRIVERS)
+      .then((v) => {
+        setUseMockDrivers(v === '1');
+      })
+      .catch(() => {});
   }, []);
 
   const markTutorialDone = useCallback(async () => {
@@ -287,24 +301,47 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
     []
   );
 
+  const toggleMockDrivers = useCallback(async () => {
+    const next = !useMockDrivers;
+    setUseMockDrivers(next);
+    await AsyncStorage.setItem(STORAGE_KEY_USE_MOCK_DRIVERS, next ? '1' : '0');
+    showToast(next ? '已开启假数据（仅乘客端附近司机）' : '已关闭假数据', 'success');
+    // 立即基于当前中心坐标刷新附近司机列表，确保开关生效
+    setLoading(true);
+    await fetchNearbyWithCenter(center.lat, center.lng);
+  }, [useMockDrivers, showToast, fetchNearbyWithCenter, center.lat, center.lng]);
+
   const fetchNearbyWithCenter = useCallback(
     async (lat: number, lng: number) => {
       try {
         const res = await getNearbyDrivers({ lat, lng, radius_km: 10 });
         const list = Array.isArray(res.data) ? res.data : [];
-        if (list.length === 0) {
+        const useMock = typeof __DEV__ !== 'undefined' && __DEV__ &&
+          (await AsyncStorage.getItem(STORAGE_KEY_USE_MOCK_DRIVERS)) === '1';
+        if (list.length === 0 && useMock) {
           setDrivers(getMockDrivers(lat, lng));
         } else {
           setDrivers(list);
+          if (list.length === 0 && currentIdentity === 'passenger') {
+            showToast('暂无附近司机，试试更换位置或稍后再看', 'default');
+          }
         }
       } catch (e: any) {
-        showToast(getUserFacingMessage(e, '获取附近司机失败'), 'error');
-        setDrivers(getMockDrivers(lat, lng));
+        const useMock = typeof __DEV__ !== 'undefined' && __DEV__ &&
+          (await AsyncStorage.getItem(STORAGE_KEY_USE_MOCK_DRIVERS)) === '1';
+        if (useMock) {
+          setDrivers(getMockDrivers(lat, lng));
+        } else {
+          if (currentIdentity === 'passenger') {
+            showToast(getUserFacingMessage(e, '获取附近司机失败'), 'error');
+          }
+          setDrivers([]);
+        }
       } finally {
         setLoading(false);
       }
     },
-    [showToast]
+    [showToast, currentIdentity]
   );
 
   const tryUpdateLastLocation = useCallback(
@@ -586,22 +623,52 @@ export const PassengerHomeScreen = React.memo(function PassengerHomeScreen() {
         }}
       />
       <View style={styles.container}>
-      {/* App 顶部：定位入口（图标 + 文案 + 右箭头），点击打开底部抽屉 */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.locationEntry,
-            pressed && styles.locationEntryPressed,
-          ]}
-          onPress={() => setLocationSheetVisible(true)}
-        >
-          <Text style={styles.locationEntryIcon}>📍</Text>
-          <Text style={styles.locationEntryText} numberOfLines={1}>
-            {locationLabel}
-          </Text>
-          <Text style={styles.locationEntryArrow}>›</Text>
-        </Pressable>
-      </View>
+        {/* App 顶部：左侧定位入口 + 右侧教程入口/假数据开关 */}
+        <View style={styles.topBar}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.locationEntry,
+              pressed && styles.locationEntryPressed,
+            ]}
+            onPress={() => setLocationSheetVisible(true)}
+          >
+            <Text style={styles.locationEntryIcon}>📍</Text>
+            <Text style={styles.locationEntryText} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+            <Text style={styles.locationEntryArrow}>›</Text>
+          </Pressable>
+          <View style={styles.topBarRight}>
+            {ENABLE_MOCK_DRIVERS_BUTTON && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.mockToggleButton,
+                  useMockDrivers && styles.mockToggleButtonOn,
+                  pressed && styles.tutorialButtonPressed,
+                ]}
+                onPress={toggleMockDrivers}
+              >
+                <Text
+                  style={[
+                    styles.mockToggleButtonText,
+                    useMockDrivers && styles.mockToggleButtonTextOn,
+                  ]}
+                >
+                  假数据{useMockDrivers ? '开' : '关'}
+                </Text>
+              </Pressable>
+            )}
+            <Pressable
+              style={({ pressed }) => [
+                styles.tutorialButton,
+                pressed && styles.tutorialButtonPressed,
+              ]}
+              onPress={() => setShowTutorial(true)}
+            >
+              <Text style={styles.tutorialButtonText}>教程</Text>
+            </Pressable>
+          </View>
+        </View>
 
       <View style={styles.mapWrap}>
         <MapView
@@ -962,6 +1029,14 @@ function createStyles(fontScaleLevel: FontScaleLevel) {
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   locationEntry: {
     flexDirection: 'row',
@@ -991,6 +1066,42 @@ function createStyles(fontScaleLevel: FontScaleLevel) {
     color: theme.textMuted,
     marginLeft: 4,
     fontWeight: '300',
+  },
+  tutorialButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.borderRadiusSm,
+    backgroundColor: theme.surface2,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  tutorialButtonPressed: {
+    opacity: 0.9,
+  },
+  tutorialButtonText: {
+    fontSize: scaledFontSize(14, fontScale),
+    color: theme.accent,
+    fontWeight: '600',
+  },
+  mockToggleButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: theme.borderRadiusSm,
+    backgroundColor: theme.surface2,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  mockToggleButtonOn: {
+    backgroundColor: theme.accentSoft,
+    borderColor: theme.accent,
+  },
+  mockToggleButtonText: {
+    fontSize: scaledFontSize(12, fontScale),
+    color: theme.textMuted,
+    fontWeight: '600',
+  },
+  mockToggleButtonTextOn: {
+    color: theme.accent,
   },
   mapWrap: {
     flex: 1,

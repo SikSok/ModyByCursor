@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Animated,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Geolocation from '@react-native-community/geolocation';
@@ -331,6 +332,25 @@ const WEATHER_TIMEOUT_MS = 10000;
     markTutorialDone();
   }, [markTutorialDone]);
 
+  const handlePickAndSavePaymentQR = useCallback(async (): Promise<string | null> => {
+    try {
+      // 按需加载，避免在未使用时增加 bundle 体积
+      const { launchImageLibrary } = require('react-native-image-picker');
+      const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
+      if (result.didCancel || !result?.assets?.length) return null;
+      const uri = result.assets[0].uri;
+      if (uri) {
+        await AsyncStorage.setItem(STORAGE_KEY_PAYMENT_QR_URI, uri);
+        setPaymentQrUri(uri);
+        return uri;
+      }
+      return null;
+    } catch {
+      Alert.alert('提示', '选择图片需要安装 react-native-image-picker，请先执行 npm install 并重新编译。');
+      return null;
+    }
+  }, []);
+
   const onToggleAvailable = useCallback(async () => {
     if (!token) return;
     if (!isAvailable) {
@@ -365,13 +385,16 @@ const WEATHER_TIMEOUT_MS = 10000;
     }
   }, [token, isAvailable, showToast, onOpenProfile]);
 
-  const openPaymentQR = useCallback(() => {
+  const openPaymentQR = useCallback(async () => {
     if (paymentQrUri) {
       setShowQrFullscreen(true);
-    } else {
-      onOpenProfile?.();
+      return;
     }
-  }, [paymentQrUri, onOpenProfile]);
+    const uri = await handlePickAndSavePaymentQR();
+    if (uri) {
+      setShowQrFullscreen(true);
+    }
+  }, [paymentQrUri, handlePickAndSavePaymentQR]);
 
   const styles = useMemo(() => createStyles(fontScale), [fontScale]);
 
@@ -404,17 +427,43 @@ const WEATHER_TIMEOUT_MS = 10000;
         animationType="fade"
         onRequestClose={() => setShowQrFullscreen(false)}
       >
-        <Pressable style={styles.qrFullscreenOverlay} onPress={() => setShowQrFullscreen(false)}>
-          <Pressable style={styles.qrFullscreenContent} onPress={(e) => e.stopPropagation()}>
+        <Pressable style={styles.qrMask} onPress={() => setShowQrFullscreen(false)}>
+          <View style={styles.qrPopup}>
             {paymentQrUri ? (
               <Image source={{ uri: paymentQrUri }} style={styles.qrFullscreenImage} resizeMode="contain" />
             ) : null}
-            <Text style={styles.qrFullscreenHint}>点击空白处关闭</Text>
-          </Pressable>
+            <Text style={styles.qrFullscreenHint}>点击周围空白区域关闭</Text>
+            <Pressable
+              style={({ pressed }) => [
+                styles.qrChangeButtonBottom,
+                pressed && styles.qrChangeButtonBottomPressed,
+              ]}
+              onPress={async () => {
+                await handlePickAndSavePaymentQR();
+              }}
+            >
+              <Text style={styles.qrChangeButtonBottomText}>更换收款码</Text>
+            </Pressable>
+          </View>
         </Pressable>
       </Modal>
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.topBar}>
+          <View style={styles.topBarPlaceholder} />
+          <View style={styles.topBarRight}>
+            <Pressable
+              onPress={() => setShowTutorial(true)}
+              style={({ pressed }) => [
+                styles.tutorialButton,
+                pressed && styles.tutorialButtonPressed,
+              ]}
+            >
+              <Text style={styles.tutorialButtonText}>教程</Text>
+            </Pressable>
+          </View>
+        </View>
+
         <View style={[styles.greetingBlock, { minHeight: greetingHeight }]}>
           <Text style={styles.timeText}>{timeGreeting.timeStr}</Text>
           <Text style={styles.greetingText}>{timeGreeting.greeting}</Text>
@@ -556,6 +605,37 @@ function createStyles(fontScale: number) {
       padding: 20,
       paddingBottom: 24,
       backgroundColor: theme.bg,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    topBarPlaceholder: {
+      width: 60,
+      height: 32,
+    },
+    topBarRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    tutorialButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: theme.borderRadiusSm,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+    },
+    tutorialButtonPressed: {
+      opacity: 0.85,
+    },
+    tutorialButtonText: {
+      fontSize: scaledFontSize(14, fontScale),
+      color: theme.accent,
+      fontWeight: '600',
     },
     greetingBlock: {
       justifyContent: 'center',
@@ -704,17 +784,21 @@ function createStyles(fontScale: number) {
       fontWeight: '600',
       textAlign: 'center',
     },
-    qrFullscreenOverlay: {
+    qrMask: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.85)',
+      backgroundColor: 'rgba(0,0,0,0.5)',
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 24,
+      padding: 20,
     },
-    qrFullscreenContent: {
-      width: '100%',
-      flex: 1,
-      justifyContent: 'center',
+    qrPopup: {
+      width: 320,
+      maxWidth: '100%',
+      backgroundColor: theme.surface,
+      borderRadius: theme.borderRadius,
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 20,
       alignItems: 'center',
     },
     qrFullscreenImage: {
@@ -723,9 +807,25 @@ function createStyles(fontScale: number) {
       maxWidth: '100%',
     },
     qrFullscreenHint: {
-      marginTop: 24,
-      fontSize: scaledFontSize(14, fontScale),
-      color: 'rgba(255,255,255,0.8)',
+      marginTop: 12,
+      marginBottom: 16,
+      fontSize: scaledFontSize(13, fontScale),
+      color: theme.textMuted,
+    },
+    qrChangeButtonBottom: {
+      alignSelf: 'stretch',
+      paddingVertical: 12,
+      borderRadius: theme.borderRadiusSm,
+      backgroundColor: theme.accent,
+      alignItems: 'center',
+    },
+    qrChangeButtonBottomPressed: {
+      opacity: 0.9,
+    },
+    qrChangeButtonBottomText: {
+      fontSize: scaledFontSize(15, fontScale),
+      color: '#fff',
+      fontWeight: '700',
     },
   });
 }

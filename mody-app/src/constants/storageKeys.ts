@@ -28,3 +28,6 @@ export const STORAGE_KEY_ONBOARDING_DRIVER_DONE = '@mody_onboarding_driver_done'
 
 /** 埋点事件队列（AsyncStorage），JSON 数组：[{ event, timestamp, payload? }] */
 export const STORAGE_KEY_EVENTS = '@mody_events';
+
+/** 本地开发：是否在乘客端使用假司机数据（仅 __DEV__ 时生效），'1' = 开 */
+export const STORAGE_KEY_USE_MOCK_DRIVERS = '@mody_dev_use_mock_drivers';
